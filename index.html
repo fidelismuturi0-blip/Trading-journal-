@@ -55,6 +55,7 @@ h1{color:var(--acc);letter-spacing:.06em;text-transform:uppercase;display:flex;a
 footer{text-align:center;color:var(--mute);font-size:12px;padding:24px 0 8px}footer b{color:var(--acc);letter-spacing:.08em}
 .chk{display:flex;flex-wrap:wrap;gap:8px}.chk label{flex-direction:row;align-items:center;gap:6px;font-size:13px;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:4px 10px}.chk input{width:auto}
 .fl{padding-left:0;list-style:none}.fl li{padding:8px 0;border-bottom:1px solid var(--line)}
+.ckl{flex-direction:row;align-items:center;gap:10px;font-size:14px;color:var(--ink);padding:8px 0;border-bottom:1px solid var(--line)}.ckl input,td input[type=checkbox]{width:auto}
 svg{width:100%;height:auto;display:block}
 </style>
 </head>
@@ -68,7 +69,7 @@ svg{width:100%;height:auto;display:block}
 <div class="wide"><button id="login" type="button">Log in</button> <button id="signup" type="button" class="ghost">Create account</button></div></form></div>
 <div id="app" hidden>
 <p class="sub"><span id="who"></span> <select id="cur" aria-label="Currency"></select> <button class="ghost" id="logout" type="button">Log out</button></p>
-<div class="tabs"><button id="tab-journal" class="on" onclick="show('journal')">Journal</button><button id="tab-insights" onclick="show('insights')">Insights</button><button id="tab-news" onclick="show('news')">News</button></div>
+<div class="tabs"><button id="tab-journal" class="on" onclick="show('journal')">Journal</button><button id="tab-insights" onclick="show('insights')">Insights</button><button id="tab-plan" onclick="show('plan')">Plan</button><button id="tab-news" onclick="show('news')">News</button></div>
 <div id="t-journal"><div class="stats" id="stats"></div>
 
 <div class="card"><h2>Equity curve</h2><div id="chart"></div></div>
@@ -109,7 +110,20 @@ svg{width:100%;height:auto;display:block}
 <div class="card"><h2>This month</h2><div class="cal" id="cal"></div></div>
 <div class="card"><h2>Monthly P&amp;L</h2><table style="min-width:0"><tbody id="byMonth"></tbody></table></div>
 <div class="card"><h2>By strategy</h2><table style="min-width:0"><tbody id="byTag"></tbody></table></div></div>
-<div id="t-news" hidden><div class="card"><h2>Economic calendar</h2><div id="ev"></div></div><div class="card"><h2>Forex headlines</h2><div id="nw"></div></div></div>
+<div id="t-plan" hidden>
+<div class="card"><h2>Pre-trade checklist <span id="ckN" style="font-size:13px"></span></h2><div id="ck"></div><button class="ghost" id="ckReset" type="button" style="margin-top:10px">Reset</button></div>
+<div class="card"><h2>Lot size calculator</h2><div id="cPre" class="bar"></div><form onsubmit="return false">
+<label>Instrument<select id="ci" onchange="calc2()"><option value="XAU">XAUUSD (Gold)</option><option value="EUR">EURUSD / GBPUSD</option><option value="JPY">USDJPY</option></select></label>
+<label>Account balance (USD)<input id="ca" type="number" step="any" value="1000" oninput="calc2()"></label>
+<label>Risk per trade<select id="cr" onchange="calc2()"><option value="2">2%</option><option value="2.5">2.5%</option><option value="3">3%</option></select></label>
+<label>Entry price<input id="ce" type="number" step="any" oninput="calc2()"></label>
+<label>Stop price<input id="cs" type="number" step="any" oninput="calc2()"></label></form>
+<p id="cOut"></p><div class="scroll"><table style="min-width:0"><tbody id="cTbl"></tbody></table></div>
+<p style="color:var(--mute);font-size:12px">Assumes a USD account and a standard contract (Gold 100 oz per lot, forex 100,000 units). Cent accounts: enter your balance in dollars and check your broker's contract size.</p></div>
+<div class="card"><h2>Challenge planner</h2><form onsubmit="return false"><label>Start balance<input id="pb" type="number" step="any" value="10" oninput="plan()"></label><label>Risk % per trade<select id="pr" onchange="plan()"><option value="2">2%</option><option value="2.5">2.5%</option><option value="3">3%</option></select></label><label>Target % per day<input id="pt" type="number" step="any" value="4" oninput="plan()"></label><label>Days<input id="pd" type="number" value="30" max="60" oninput="plan()"></label></form>
+<p id="planN" style="color:var(--mute)"></p><div class="scroll"><table style="min-width:520px"><tr><th>Day</th><th>Balance</th><th>Risk</th><th>Target</th><th>After win</th><th>Done</th></tr><tbody id="planT"></tbody></table></div></div></div>
+<div id="t-news" hidden><div class="tabs"><button id="nmG" class="on" onclick="NM='gold';ev()">Gold: USD high impact</button><button id="nmA" onclick="NM='all';ev()">All majors</button></div>
+<div class="card"><h2>Economic calendar</h2><p style="color:var(--mute);font-size:13px;margin-top:0">Gold reacts hardest to US data: <b>NFP</b>, <b>CPI</b> and PPI, <b>PCE</b>, <b>FOMC</b> decisions, minutes and Fed speeches, ISM/<b>PMI</b>, GDP, retail sales and jobless claims. Many traders cut size or stay flat around them.</p><div id="ev"></div></div><div class="card"><h2>Gold (XAUUSD) headlines</h2><div id="nw"></div></div></div>
 </div>
 <footer>Created by <b>CARTEL</b> · Bulls Journal</footer>
 <div id="lb" hidden></div>
@@ -232,16 +246,35 @@ var nn=L.filter(function(t){return !t.notes}).length;if(nn)add(1,nn+' trade(s) h
 var w=Object.keys(G2).sort(function(x,y){return G2[x].p-G2[y].p})[0];if(w&&G2[w].p<0&&G2[w].n>=2)add(1,'Weakest '+p[1]+': <b>'+esc(w)+'</b> ('+fmt(G2[w].p)+' over '+G2[w].n+' trades).')});
 if(!F.length)add(0,'No major mistake patterns found. Keep logging honestly.');
 out.innerHTML='<p>'+a+' to '+b+' · '+n+' trades · <b class="'+(tot>=0?"win":"loss")+'">'+fmt(tot)+'</b></p><ul class="fl">'+F.join("")+'</ul>'}
-function show(n){["journal","insights","news"].forEach(function(k){$("t-"+k).hidden=k!==n;$("tab-"+k).classList.toggle("on",k===n)});if(n==="news")loadNews()}
+function show(n){["journal","insights","plan","news"].forEach(function(k){$("t-"+k).hidden=k!==n;$("tab-"+k).classList.toggle("on",k===n)});if(n==="news")loadNews()}
 function tv(id,file,cfg){var b=$(id);b.innerHTML='<div class="tradingview-widget-container__widget"></div>';var sc=document.createElement("script");sc.src="https://s3.tradingview.com/external-embedding/embed-widget-"+file+".js";sc.async=true;sc.text=JSON.stringify(cfg);b.appendChild(sc)}
-var newsOn=false;
-function loadNews(){if(newsOn)return;newsOn=true;
-tv("ev","events",{colorTheme:"dark",isTransparent:true,width:"100%",height:520,locale:"en",importanceFilter:"-1,0,1",currencyFilter:"USD,EUR,GBP,JPY,CHF,AUD,CAD,NZD"});
-tv("nw","timeline",{feedMode:"market",market:"forex",colorTheme:"dark",isTransparent:true,displayMode:"regular",width:"100%",height:520,locale:"en"})}
+var newsOn=false,NM="gold";
+function loadNews(){if(newsOn)return;newsOn=true;ev();
+tv("nw","timeline",{feedMode:"symbol",symbol:"OANDA:XAUUSD",colorTheme:"dark",isTransparent:true,displayMode:"regular",width:"100%",height:520,locale:"en"})}
+function ev(){tv("ev","events",{colorTheme:"dark",isTransparent:true,width:"100%",height:520,locale:"en",importanceFilter:NM==="gold"?"1":"0,1",currencyFilter:NM==="gold"?"USD":"USD,EUR,GBP,JPY,CHF,AUD,CAD,NZD"});$("nmG").classList.toggle("on",NM==="gold");$("nmA").classList.toggle("on",NM!=="gold")}
 tv("tick","ticker-tape",{symbols:[{proName:"FX:EURUSD",title:"EUR/USD"},{proName:"FX:GBPUSD",title:"GBP/USD"},{proName:"FX:USDJPY",title:"USD/JPY"},{proName:"FX_IDC:USDKES",title:"USD/KES"},{proName:"OANDA:XAUUSD",title:"Gold"},{proName:"TVC:DXY",title:"DXY"}],showSymbolLogo:false,colorTheme:"dark",isTransparent:true,displayMode:"adaptive",locale:"en"});
 $("wk").onchange=weekly;
+var CK=["Daily trend and 4-hour structure checked","Support and resistance marked before entry","Price reached my planned entry area","Entry confirmed (rejection or break-and-retest)","Stop-loss set before entry","Position size calculated from the stop distance","Combined risk checked before adding another position","Profit target and invalidation point defined"],P={};
+try{P=JSON.parse(localStorage.getItem("bj-plan")||"{}")}catch(e){}
+$("ck").innerHTML=CK.map(function(c){return'<label class="ckl"><input type="checkbox">'+c+'</label>'}).join("");
+function ckUpd(){var n=$("ck").querySelectorAll("input:checked").length;$("ckN").innerHTML=n+'/'+CK.length+' · '+(n==CK.length?'<b class="win">Ready</b>':'<b class="loss">Not ready</b>')}
+$("ck").onchange=ckUpd;$("ckReset").onclick=function(){Array.prototype.forEach.call($("ck").querySelectorAll("input"),function(c){c.checked=false});ckUpd()};
+function usd(n){return new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n)}
+function lots(bal,r,dist,px,ins){var pu=ins==="JPY"?100000/px:ins==="XAU"?100:100000;return dist>0?bal*r/100/(dist*pu):0}
+function calc2(){var ins=$("ci").value,a=+$("ca").value||0,r=+$("cr").value,e=+$("ce").value,st=+$("cs").value,dist=Math.abs(e-st),px=e||1;
+var f=function(l){return l<0.01?'<span class="loss">&lt;0.01</span>':(Math.floor(l*100)/100).toFixed(2)};
+if(!dist){$("cOut").innerHTML='Enter your entry and stop prices.';$("cTbl").innerHTML='';return}
+var L=lots(a,r,dist,px,ins);
+$("cOut").innerHTML='Risk '+r+'%: <b>'+usd(a*r/100)+'</b><br>Lot size: <b>'+f(L)+'</b>'+(L<0.01?' (too small for the 0.01 minimum. Use a tighter stop or a bigger account.)':'')+'<br>Stop distance: '+dist.toFixed(ins==="JPY"?3:ins==="XAU"?2:5);
+$("cTbl").innerHTML='<tr><th>Account</th><th>Risk '+r+'%</th><th>Lots</th></tr>'+[100,500,1000,5000,10000,50000,100000].map(function(v){return'<tr><td>'+usd(v)+'</td><td>'+usd(v*r/100)+'</td><td>'+f(lots(v,r,dist,px,ins))+'</td></tr>'}).join("")}
+function plan(){var b=+$("pb").value||0,r=+$("pr").value||0,t=+$("pt").value||0,d=Math.min(60,+$("pd").value||30),h="";
+for(var i=1;i<=d;i++){var rk=b*r/100,tg=b*t/100;h+='<tr><td>'+i+'</td><td>'+fmt(b)+'</td><td>'+fmt(rk)+'</td><td>'+fmt(tg)+'</td><td>'+fmt(b+tg)+'</td><td><input type="checkbox" data-d="'+i+'"'+(P[i]?" checked":"")+'></td></tr>';b+=tg}
+$("planT").innerHTML=h;$("planN").innerHTML='⚠ This plan needs <b>'+d+' wins in a row</b>. At a 60% win rate the odds are about 1 in '+Math.round(1/Math.pow(.6,d)).toLocaleString()+'. Losses compound too: 3 losses in a row at '+r+'% risk is about -'+(100*(1-Math.pow(1-r/100,3))).toFixed(1)+'% of your balance.'}
+$("planT").onchange=function(e){var d=e.target.getAttribute("data-d");if(d){P[d]=e.target.checked;try{localStorage.setItem("bj-plan",JSON.stringify(P))}catch(x){}}};
+$("cPre").innerHTML=[100,500,1000,5000,10000,50000,100000].map(function(v){return'<button class="ghost" type="button" onclick="$(\'ca\').value='+v+';calc2()">'+(v>=1000?v/1000+'k':v)+'</button>'}).join("");
+ckUpd();plan();calc2();
 $("cur").innerHTML=["USD","EUR","GBP","JPY","CHF","AUD","CAD","NZD","KES"].map(function(c){return'<option>'+c+'</option>'}).join("");$("cur").value=CUR;
-$("cur").onchange=function(){CUR=this.value;try{localStorage.setItem("bj-cur",CUR)}catch(e){}render()};
+$("cur").onchange=function(){CUR=this.value;try{localStorage.setItem("bj-cur",CUR)}catch(e){}render();plan();calc2()};
 $("gl").value=G.loss||"";$("gt").value=G.target||"";
 $("gl").onchange=$("gt").onchange=function(){G={loss:$("gl").value,target:$("gt").value};try{localStorage.setItem("bj-goals",JSON.stringify(G))}catch(e){}render()};
 $("f").date.value=today();render();
