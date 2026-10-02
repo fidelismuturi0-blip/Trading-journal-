@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trading Journal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5f2;--card:#fff;--ink:#17201b;--mute:#667068;--line:#dde3dd;--win:#1b7f4b;--loss:#c23b3b;--acc:#1f4d3a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101512;--card:#18201b;--ink:#e8eee9;--mute:#8d9a91;--line:#2a352d;--win:#4cc183;--loss:#ef7a7a;--acc:#4cc183}}
+:root[data-theme="dark"]{--bg:#101512;--card:#18201b;--ink:#e8eee9;--mute:#8d9a91;--line:#2a352d;--win:#4cc183;--loss:#ef7a7a;--acc:#4cc183}
+*,*:before,*:after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font:600 28px "Fraunces",Georgia,serif;margin:0 0 16px}
+h2{font:600 18px "Fraunces",Georgia,serif;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat span{display:block;color:var(--mute);font-size:12px}
+.stat b{font-size:20px;font-weight:500}
+.win{color:var(--win)}.loss{color:var(--loss)}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+label{font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:3px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;width:100%}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.wide{grid-column:1/-1}
+button{font:inherit;cursor:pointer;border:1px solid var(--acc);background:var(--acc);color:var(--bg);border-radius:6px;padding:8px 14px}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.bar select,.bar input{width:auto;flex:1;min-width:110px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:500;font-size:12px}
+td.note{white-space:normal;max-width:220px;color:var(--mute)}
+.empty{color:var(--mute);padding:12px 0}
+.thumb{width:56px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--line);cursor:zoom-in;display:block}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9;cursor:zoom-out}
+#lb[hidden]{display:none}#lb img{max-width:100%;max-height:100%;border-radius:6px}
+.sub{color:var(--mute);margin:-8px 0 16px;font-size:13px}
+svg{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+<main>
+<h1>Trading journal</h1>
+<div class="card" id="auth"><h2>Sign in</h2>
+<form onsubmit="return false"><label>Email<input id="em" type="email" autocomplete="email"></label>
+<label>Password<input id="pw" type="password" autocomplete="current-password" minlength="6"></label>
+<div class="wide"><button id="login" type="button">Log in</button> <button id="signup" type="button" class="ghost">Create account</button></div></form></div>
+<div id="app" hidden>
+<p class="sub"><span id="who"></span> <button class="ghost" id="logout" type="button">Log out</button></p>
+<div class="stats" id="stats"></div>
+
+<div class="card"><h2>Equity curve</h2><div id="chart"></div></div>
+
+<div class="card"><h2>Log a trade</h2>
+<form id="f">
+<label>Date<input type="date" name="date" required></label>
+<label>Symbol<input name="symbol" placeholder="EURUSD" required></label>
+<label>Side<select name="side"><option>Long</option><option>Short</option></select></label>
+<label>Entry<input name="entry" type="number" step="any" required></label>
+<label>Exit<input name="exit" type="number" step="any" required></label>
+<label>Size<input name="size" type="number" step="any" value="1" required></label>
+<label>Stop loss<input name="stop" type="number" step="any"></label>
+<label>Fees<input name="fees" type="number" step="any" value="0"></label>
+<label>Strategy / tag<input name="tag" placeholder="Breakout"></label>
+<label class="wide">Chart screenshot<input type="file" name="shot" accept="image/*"></label>
+<label class="wide">Notes<textarea name="notes" rows="2" placeholder="Why you took it, how you felt, what to change"></textarea></label>
+<div class="wide"><button type="submit">Save trade</button></div>
+</form></div>
+
+<div class="card"><h2>Trades</h2>
+<div class="bar">
+<input id="q" placeholder="Filter by symbol">
+<select id="tagf"><option value="">All strategies</option></select>
+<button class="ghost" id="exp" type="button">Export CSV</button>
+<button class="ghost" id="imp" type="button">Import CSV</button>
+<input type="file" id="file" accept=".csv" hidden>
+</div>
+<div class="scroll" id="tbl"></div></div>
+</div>
+</main>
+<div id="lb" hidden></div>
+<script>
+var SUPABASE_URL="https://vupmosqsyyyknyzdtixw.supabase.co",SUPABASE_KEY="sb_publishable_ksHsUty-nQkR-nIMiX0y-g_A-Vn9h46";
+var sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY),trades=[],urls={},user=null;
+function $(i){return document.getElementById(i)}
+function fmt(n){return (n<0?"-":"")+Math.abs(n).toFixed(2)}
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function calc(t){var d=t.side==="Long"?t.exit-t.entry:t.entry-t.exit;var pnl=d*t.size-t.fees;
+var risk=t.stop?Math.abs(t.entry-t.stop)*t.size:0;return{pnl:pnl,r:risk?pnl/risk:null}}
+function $(i){return document.getElementById(i)}
+function fmt(n){return (n<0?"-":"")+Math.abs(n).toFixed(2)}
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function filtered(){var q=$("q").value.trim().toLowerCase(),g=$("tagf").value;
+return trades.filter(function(t){return(!q||t.symbol.toLowerCase().indexOf(q)>-1)&&(!g||t.tag===g)}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0})}
+function render(){
+var list=filtered(),res=list.map(calc),n=list.length;
+var wins=res.filter(function(r){return r.pnl>0}),losses=res.filter(function(r){return r.pnl<0});
+var gw=wins.reduce(function(s,r){return s+r.pnl},0),gl=Math.abs(losses.reduce(function(s,r){return s+r.pnl},0));
+var total=gw-gl,rs=res.filter(function(r){return r.r!==null}),avgR=rs.length?rs.reduce(function(s,r){return s+r.r},0)/rs.length:null;
+var st=[["Net P&L",fmt(total),total>=0?"win":"loss"],["Trades",n,""],["Win rate",n?Math.round(wins.length/n*100)+"%":"-",""],
+["Profit factor",gl?(gw/gl).toFixed(2):(gw?"∞":"-"),""],["Avg win",wins.length?fmt(gw/wins.length):"-","win"],
+["Avg loss",losses.length?fmt(-gl/losses.length):"-","loss"],["Avg R",avgR===null?"-":avgR.toFixed(2)+"R",""]];
+$("stats").innerHTML=st.map(function(s){return'<div class="stat"><span>'+s[0]+'</span><b class="'+s[2]+'">'+s[1]+'</b></div>'}).join("");
+chart(res);
+var tags=[];trades.forEach(function(t){if(t.tag&&tags.indexOf(t.tag)<0)tags.push(t.tag)});
+var cur=$("tagf").value;$("tagf").innerHTML='<option value="">All strategies</option>'+tags.map(function(t){return'<option'+(t===cur?" selected":"")+'>'+esc(t)+'</option>'}).join("");
+if(!n){$("tbl").innerHTML='<div class="empty">No trades yet. Log your first one above.</div>';return}
+$("tbl").innerHTML='<table><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>P&amp;L</th><th>R</th><th>Tag</th><th>Notes</th><th>Chart</th><th></th></tr>'+
+list.map(function(t,i){var r=res[i];return'<tr><td>'+t.date+'</td><td>'+esc(t.symbol)+'</td><td>'+t.side+'</td><td>'+t.entry+'</td><td>'+t.exit+'</td><td>'+t.size+'</td><td class="'+(r.pnl>=0?"win":"loss")+'">'+fmt(r.pnl)+'</td><td>'+(r.r===null?"-":r.r.toFixed(2))+'</td><td>'+esc(t.tag)+'</td><td class="note">'+esc(t.notes)+'</td><td>'+(urls[t.shot_path]?'<img class="thumb" src="'+urls[t.shot_path]+'" data-view="'+t.id+'" alt="Chart screenshot">':"")+'</td><td><button class="ghost" data-id="'+t.id+'" aria-label="Delete trade">Delete</button></td></tr>'}).reverse().join("")+'</table>'}
+function chart(res){
+var el=$("chart");if(!res.length){el.innerHTML='<div class="empty">The curve appears after your first trade.</div>';return}
+var pts=[0],c=0;res.forEach(function(r){c+=r.pnl;pts.push(c)});
+var W=700,H=220,p=34,mn=Math.min.apply(null,pts),mx=Math.max.apply(null,pts);if(mn===mx){mn-=1;mx+=1}
+var x=function(i){return p+i*(W-2*p)/Math.max(pts.length-1,1)},y=function(v){return H-p-(v-mn)/(mx-mn)*(H-2*p)};
+var d=pts.map(function(v,i){return(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)}).join("");
+var col=c>=0?"var(--win)":"var(--loss)";
+el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Equity curve"><line x1="'+p+'" x2="'+(W-p)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--line)" stroke-dasharray="4 4"/>'+
+'<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.5" stroke-linejoin="round"/>'+
+'<text x="'+p+'" y="16" fill="var(--mute)" font-size="12">'+fmt(mx)+'</text><text x="'+p+'" y="'+(H-8)+'" fill="var(--mute)" font-size="12">'+fmt(mn)+'</text></svg>'}
+$("f").addEventListener("submit",async function(e){e.preventDefault();
+var form=e.target,f=new FormData(form),g=function(k){return f.get(k)},btn=form.querySelector("button[type=submit]");btn.disabled=true;
+try{var path=null,file=form.shot.files[0];
+if(file){path=user.id+"/"+Date.now()+".jpg";var up=await sb.storage.from("screenshots").upload(path,await shrink(file),{contentType:"image/jpeg"});if(up.error)throw up.error}
+var r=await sb.from("trades").insert({date:g("date"),symbol:g("symbol").toUpperCase().trim(),side:g("side"),entry:+g("entry"),exit:+g("exit"),size:+g("size"),stop:g("stop")?+g("stop"):null,fees:+g("fees")||0,tag:g("tag").trim(),notes:g("notes").trim(),shot_path:path});
+if(r.error)throw r.error;
+form.reset();form.date.value=today();form.size.value=1;form.fees.value=0;await refresh()}catch(err){alert("Could not save: "+err.message)}
+btn.disabled=false});
+function shrink(file){return new Promise(function(res,rej){var im=new Image();im.onerror=rej;im.onload=function(){
+var k=Math.min(1,1200/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;
+c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(res,"image/jpeg",0.8)};im.src=URL.createObjectURL(file)})}
+async function refresh(){var r=await sb.from("trades").select("*").order("date");if(r.error){alert(r.error.message);return}
+trades=r.data;urls={};var paths=trades.map(function(t){return t.shot_path}).filter(Boolean);
+if(paths.length){var s=await sb.storage.from("screenshots").createSignedUrls(paths,3600);(s.data||[]).forEach(function(x){if(x.signedUrl)urls[x.path]=x.signedUrl})}
+render()}
+$("tbl").addEventListener("click",async function(e){var id=e.target.getAttribute("data-id"),v=e.target.getAttribute("data-view");
+var t=trades.filter(function(x){return x.id===(id||v)})[0];if(!t)return;
+if(v&&urls[t.shot_path]){$("lb").innerHTML='<img src="'+urls[t.shot_path]+'" alt="Chart screenshot">';$("lb").hidden=false;return}
+if(id&&confirm("Delete this trade?")){if(t.shot_path)await sb.storage.from("screenshots").remove([t.shot_path]);await sb.from("trades").delete().eq("id",id);refresh()}});
+$("lb").onclick=function(){this.hidden=true};
+document.addEventListener("keydown",function(e){if(e.key==="Escape")$("lb").hidden=true});
+$("q").addEventListener("input",render);$("tagf").addEventListener("change",render);
+$("exp").onclick=function(){var h=["date","symbol","side","entry","exit","size","stop","fees","tag","notes"];
+var rows=[h.join(",")].concat(trades.map(function(t){return h.map(function(k){return'"'+String(t[k]===undefined?"":t[k]).replace(/"/g,'""')+'"'}).join(",")}));
+var a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(rows.join("\n"));a.download="trades.csv";a.click()};
+$("imp").onclick=function(){$("file").click()};
+$("file").onchange=function(e){var fr=new FileReader();fr.onload=async function(){
+var lines=fr.result.split(/\r?\n/).filter(Boolean),h=parse(lines.shift()),rows=[];
+lines.forEach(function(l){var c=parse(l),o={};h.forEach(function(k,j){o[k.trim()]=c[j]});
+if(o.date&&o.symbol)rows.push({date:o.date,symbol:o.symbol.toUpperCase(),side:/short/i.test(o.side)?"Short":"Long",entry:+o.entry,exit:+o.exit,size:+o.size||1,stop:+o.stop||null,fees:+o.fees||0,tag:o.tag||"",notes:o.notes||""})});
+if(rows.length){var r=await sb.from("trades").insert(rows);if(r.error)alert(r.error.message)}refresh()};
+if(e.target.files[0])fr.readAsText(e.target.files[0]);e.target.value=""};
+$("login").onclick=async function(){var r=await sb.auth.signInWithPassword({email:$("em").value.trim(),password:$("pw").value});if(r.error)alert(r.error.message)};
+$("signup").onclick=async function(){var r=await sb.auth.signUp({email:$("em").value.trim(),password:$("pw").value});
+if(r.error)alert(r.error.message);else if(!r.data.session)alert("Check your email to confirm your account, then log in.")};
+$("logout").onclick=function(){sb.auth.signOut()};
+function setUser(u){var changed=(u&&u.id)!==(user&&user.id);user=u||null;$("auth").hidden=!!user;$("app").hidden=!user;$("who").textContent=user?user.email:"";
+if(changed){if(user)refresh();else{trades=[];urls={};render()}}}
+sb.auth.onAuthStateChange(function(_e,ses){setUser(ses&&ses.user)});
+$("f").date.value=today();render();
+sb.auth.getSession().then(function(r){setUser(r.data.session&&r.data.session.user)});
+function parse(l){var o=[],c="",q=false;for(var i=0;i<l.length;i++){var ch=l[i];if(q){if(ch==='"'&&l[i+1]==='"'){c+='"';i++}else if(ch==='"')q=false;else c+=ch}else if(ch==='"')q=true;else if(ch===","){o.push(c);c=""}else c+=ch}o.push(c);return o}
+function today(){return new Date().toISOString().slice(0,10)}</script>
+</body>
+</html>
