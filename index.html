@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <title>Bulls Journal</title>
+<meta name="description" content="Bulls Journal: log trades, review your weekly mistakes and size your risk.">
+<meta property="og:title" content="Bulls Journal">
+<meta property="og:description" content="Log trades, review your weekly mistakes and size your risk. Created by Cartel.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bulls Journal">
+<meta property="og:url" content="https://fidelismuturi0-blip.github.io/bulls-journal/">
+<meta property="og:image" content="https://fidelismuturi0-blip.github.io/bulls-journal/icon-512.png">
+<meta name="twitter:card" content="summary">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-title" content="Bulls Journal">
@@ -66,9 +74,10 @@ svg{width:100%;height:auto;display:block}
 <div class="card" id="auth"><h2>Sign in</h2>
 <form onsubmit="return false"><label>Email<input id="em" type="email" autocomplete="email"></label>
 <label>Password<input id="pw" type="password" autocomplete="current-password" minlength="6"></label>
-<div class="wide"><button id="login" type="button">Log in</button> <button id="signup" type="button" class="ghost">Create account</button></div></form></div>
+<div class="wide"><button id="login" type="button">Log in</button> <button id="signup" type="button" class="ghost">Create account</button></div>
+<p class="wide" style="margin:0;color:var(--mute);font-size:13px">New here? Type your email and a password (6+ characters), then tap Create account.</p></form></div>
 <div id="app" hidden>
-<p class="sub"><span id="who"></span> <select id="cur" aria-label="Currency"></select> <button class="ghost" id="logout" type="button">Log out</button></p>
+<p class="sub"><span id="who"></span> <select id="cur" aria-label="Currency"></select> <button class="ghost" id="share" type="button">Share</button> <button class="ghost" id="logout" type="button">Log out</button></p>
 <div class="tabs"><button id="tab-journal" class="on" onclick="show('journal')">Journal</button><button id="tab-insights" onclick="show('insights')">Insights</button><button id="tab-plan" onclick="show('plan')">Plan</button><button id="tab-news" onclick="show('news')">News</button></div>
 <div id="t-journal"><div class="stats" id="stats"></div>
 
@@ -204,9 +213,15 @@ lines.forEach(function(l){var c=parse(l),o={};h.forEach(function(k,j){o[k.trim()
 if(o.date&&o.symbol)rows.push({date:o.date,symbol:o.symbol.toUpperCase(),side:/short/i.test(o.side)?"Short":"Long",entry:+o.entry,exit:+o.exit,size:+o.size||1,stop:+o.stop||null,fees:+o.fees||0,tag:o.tag||"",notes:o.notes||""})});
 if(rows.length){var r=await sb.from("trades").insert(rows);if(r.error)alert(r.error.message)}refresh()};
 if(e.target.files[0])fr.readAsText(e.target.files[0]);e.target.value=""};
-$("login").onclick=async function(){var r=await sb.auth.signInWithPassword({email:$("em").value.trim(),password:$("pw").value});if(r.error)alert(r.error.message)};
-$("signup").onclick=async function(){var r=await sb.auth.signUp({email:$("em").value.trim(),password:$("pw").value});
+function cred(up){var e=$("em").value.trim(),p=$("pw").value;
+if(!e||e.indexOf("@")<1){alert("Enter your email address first.");return null}
+if(!p||(up&&p.length<6)){alert(up?"Choose a password with at least 6 characters.":"Enter your password.");return null}
+return{email:e,password:p}}
+$("login").onclick=async function(){var c=cred(false);if(!c)return;var r=await sb.auth.signInWithPassword(c);if(r.error)alert(r.error.message)};
+$("signup").onclick=async function(){var c=cred(true);if(!c)return;var r=await sb.auth.signUp(c);
 if(r.error)alert(r.error.message);else if(!r.data.session)alert("Check your email to confirm your account, then log in.")};
+$("share").onclick=async function(){var u=location.origin+location.pathname,d={title:"Bulls Journal",text:"Track your trades with Bulls Journal",url:u};
+try{if(navigator.share)await navigator.share(d);else{await navigator.clipboard.writeText(u);alert("Link copied")}}catch(e){}};
 $("logout").onclick=function(){sb.auth.signOut()};
 function setUser(u){var changed=(u&&u.id)!==(user&&user.id);user=u||null;$("auth").hidden=!!user;$("app").hidden=!user;$("who").textContent=user?user.email:"";
 if(changed){if(user)refresh();else{trades=[];urls={};render()}}}
