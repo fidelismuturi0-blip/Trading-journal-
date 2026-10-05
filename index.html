@@ -159,6 +159,14 @@ svg{width:100%;height:auto;display:block}
 <label>Stop price<input id="cs" type="number" step="any" oninput="calc2()"></label></form>
 <p id="cOut"></p><div class="scroll"><table style="min-width:0"><tbody id="cTbl"></tbody></table></div>
 <p style="color:var(--mute);font-size:12px">Assumes a USD account and a standard contract (Gold 100 oz per lot, forex 100,000 units). Cent accounts: choose Cent account at the top and enter your balance exactly as MT5 shows it (in cents).</p></div>
+<div class="card"><h2>Goal pathway</h2>
+<form onsubmit="return false"><label>Start balance<input id="gs" type="number" step="any" value="133.76" oninput="goal()"></label><label>Goal<input id="gg" type="number" step="any" value="1000" oninput="goal()"></label>
+<label>Risk per trade<select id="grk" onchange="goal()"><option value="2">2%</option><option value="2.5">2.5%</option><option value="3">3%</option></select></label>
+<label>Reward : risk<input id="gr" type="number" step="any" value="2" oninput="goal()"></label><label>Win rate %<input id="gw" type="number" step="any" value="50" oninput="goal()"></label>
+<label>Stop (gold points)<input id="gst" type="number" step="any" value="3" oninput="goal()"></label><label>Trades per week<input id="gpw" type="number" value="25" oninput="goal()"></label>
+<div class="wide"><button class="ghost" id="gj" type="button">Use my journal stats</button></div></form>
+<p id="gOut"></p><div class="scroll"><table style="min-width:0"><tbody id="gTbl"></tbody></table></div>
+<p style="color:var(--mute);font-size:12px">Balances are in the same units as MT5 (USC on a cent account). Lot sizes assume XAUUSDc with a 0.01 minimum lot.</p></div>
 <div class="card"><h2>Challenge planner</h2><form onsubmit="return false"><label>Start balance<input id="pb" type="number" step="any" value="10" oninput="plan()"></label><label>Risk % per trade<select id="pr" onchange="plan()"><option value="2">2%</option><option value="2.5">2.5%</option><option value="3">3%</option></select></label><label>Target % per day<input id="pt" type="number" step="any" value="4" oninput="plan()"></label><label>Days<input id="pd" type="number" value="30" max="60" oninput="plan()"></label></form>
 <p id="planN" style="color:var(--mute)"></p><div class="scroll"><table style="min-width:520px"><tr><th>Day</th><th>Balance</th><th>Risk</th><th>Target</th><th>After win</th><th>Done</th></tr><tbody id="planT"></tbody></table></div></div></div>
 <div id="t-news" hidden><div class="tabs"><button id="nmG" class="on" onclick="NM='gold';ev()">Gold: USD high impact</button><button id="nmA" onclick="NM='all';ev()">All majors</button></div>
@@ -395,6 +403,19 @@ for(var d=1,nd=new Date(y,m+1,0).getDate();d<=nd;d++){var key=y+"-"+("0"+(m+1)).
 $("dcal").innerHTML=h;$("cm").textContent=mo.toLocaleString(undefined,{month:"long",year:"numeric"});
 $("recent").innerHTML=n?list.slice(-5).reverse().map(function(t){var p=calc(t).pnl;return'<div class="ckl" style="justify-content:space-between"><span><b>'+esc(t.symbol)+'</b> '+t.side+' · '+t.date+'</span><b class="'+(p>=0?"win":"loss")+'">'+fmt(p)+'</b></div>'}).join(""):'<div class="empty">No closed trades yet.</div>'}
 $("cp").onclick=function(){dOff--;render()};$("cn").onclick=function(){dOff++;render()};
+function goal(){var s0=+$("gs").value||0,g=+$("gg").value||0,rk=+$("grk").value/100,rr=+$("gr").value||0,wr=(+$("gw").value||0)/100,st=+$("gst").value||0,pw=+$("gpw").value||1,ex=wr*rr-(1-wr),gr=rk*ex,out=$("gOut");
+if(!(s0>0&&g>s0&&st>0)){out.innerHTML="Enter a start balance, a higher goal and a stop distance.";$("gTbl").innerHTML="";return}
+if(gr<=0){out.innerHTML='<b class="loss">At these numbers you lose money over time</b> (expectancy '+ex.toFixed(2)+'R per trade). Raise your win rate or reward:risk before chasing the goal.';$("gTbl").innerHTML="";return}
+var n=Math.ceil(Math.log(g/s0)/Math.log(1+gr));
+out.innerHTML='Expectancy: <b>'+ex.toFixed(2)+'R</b> per trade, about <b>+'+(gr*100).toFixed(2)+'%</b> of your balance per trade.<br>Trades to reach the goal: <b>'+n+'</b>, about <b>'+Math.ceil(n/pw)+' weeks</b> at '+pw+' trades a week.<br><span style="color:var(--mute);font-size:12px">An average, not a promise. Losing streaks and slippage will stretch it.</span>';
+var h='<tr><th>Balance</th><th>After trades</th><th>Lot</th><th>Risk</th></tr>';
+for(var k=0;k<=5;k++){var b=s0*Math.pow(g/s0,k/5),lot=Math.floor(b*rk/(st*100)*100)/100,L=lot<0.01?0.01:lot,rp=L*st*100/b*100;
+h+='<tr><td>'+b.toFixed(0)+' USC</td><td>'+Math.round(n*k/5)+'</td><td>'+L.toFixed(2)+'</td><td class="'+(rp>rk*120?"loss":"")+'">'+rp.toFixed(1)+'%</td></tr>'}
+$("gTbl").innerHTML=h}
+$("gj").onclick=function(){var c=trades.filter(isC),r=c.map(calc),w=r.filter(function(x){return x.pnl>0}),l=r.filter(function(x){return x.pnl<0});
+if(c.length<5||!w.length||!l.length){alert("Log at least 5 closed trades with both wins and losses first.");return}
+var aw=w.reduce(function(a,x){return a+x.pnl},0)/w.length,al=-l.reduce(function(a,x){return a+x.pnl},0)/l.length;
+$("gw").value=Math.round(w.length/c.length*100);$("gr").value=(aw/al).toFixed(2);goal()};
 function nowT(){var d=new Date();return("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
 function winrates(list,res){
 function grp(kf,ord){var G={};list.forEach(function(t,i){var k=kf(t);if(!k)return;var o=G[k]=G[k]||{n:0,w:0,p:0};o.n++;o.p+=res[i].pnl;if(res[i].pnl>0)o.w++});
@@ -428,7 +449,7 @@ $("radd").onclick=function(){radd($("rl").value.trim(),$("rt").value||"09:00",Ar
 $("rnot").onclick=function(){if(!("Notification" in window)){alert("This browser does not support notifications.");return}Notification.requestPermission().then(function(p){alert(p==="granted"?"Notifications on. They show while the app is open.":"Notifications are off. In-app reminders and phone alarms still work.")})};
 document.addEventListener("click",function(e){var a=e.target,i=a.getAttribute&&a.getAttribute("data-ics"),d=a.getAttribute&&a.getAttribute("data-rdel"),p=a.getAttribute&&a.getAttribute("data-pre");
 if(i!==null&&i!==undefined)ics(RM[+i]);else if(d!==null&&d!==undefined){RM.splice(+d,1);rsave()}else if(p!==null&&p!==undefined){var q=PRE[+p];radd(q.label,q.time,q.days.slice())}});
-rrender();ckUpd();plan();calc2();
+rrender();ckUpd();plan();calc2();goal();
 $("cur").innerHTML=["USD","EUR","GBP","JPY","CHF","AUD","CAD","NZD","KES"].map(function(c){return'<option>'+c+'</option>'}).join("");$("cur").value=CUR;
 $("cur").onchange=function(){CUR=this.value;try{localStorage.setItem("bj-cur",CUR)}catch(e){}render();plan();calc2()};
 $("acct").value=ACCT;$("acct").onchange=function(){ACCT=this.value;try{localStorage.setItem("bj-acct",ACCT)}catch(e){}render();plan();calc2()};
