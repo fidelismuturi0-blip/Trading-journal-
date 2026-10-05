@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bulls Journal: the trading journal built for discipline</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Log trades, find your repeat mistakes, size your risk and track your progress. Free trading journal for your phone.">
+<meta property="og:title" content="Bulls Journal">
+<meta property="og:description" content="Log trades, find your repeat mistakes, size your risk and track your progress. Created by Cartel.">
+<meta name="theme-color" content="#0a0d13">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0d13;--card:#121823;--ink:#ebe7da;--mute:#8d96a8;--line:#232c3d;--win:#2fd08f;--loss:#ff5f5f;--acc:#d4af37}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(1100px 600px at 50% -10%,#1b2336,#0a0d13) fixed;color:var(--ink);font:16px/1.6 "IBM Plex Sans",system-ui,sans-serif}
+a{color:inherit;text-decoration:none}
+.w{max-width:1000px;margin:0 auto;padding:0 18px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+.brand{display:flex;align-items:center;gap:10px;font:600 18px Fraunces,Georgia,serif;color:var(--acc);letter-spacing:.06em;text-transform:uppercase}
+.brand svg{width:30px;height:30px}
+.btn{display:inline-block;background:var(--acc);color:#0a0d13;font-weight:500;padding:12px 22px;border-radius:999px}
+.btn.o{background:transparent;color:var(--ink);border:1px solid var(--line)}
+h1{font:600 clamp(34px,8vw,58px)/1.08 Fraunces,Georgia,serif;margin:28px 0 14px}
+h1 em{color:var(--acc);font-style:normal}
+.sub{color:var(--mute);font-size:18px;max-width:560px}
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0 8px}
+.note{color:var(--mute);font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:34px 0}
+.chips span{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;font-size:14px}
+.mock{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:30px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.mock small{color:var(--mute)}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.k{border:1px solid var(--line);border-radius:10px;padding:10px 12px}.k span{display:block;color:var(--mute);font-size:12px}.k b{font-size:20px;font-weight:500}
+.win{color:var(--win)}.loss{color:var(--loss)}
+.row{display:grid;grid-template-columns:1.2fr 1fr;gap:12px}@media(max-width:640px){.row{grid-template-columns:1fr}}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cal i{display:block;height:34px;border:1px solid var(--line);border-radius:6px;font:normal 10px/1 inherit;padding:3px;color:var(--mute)}
+.cal .a{background:rgba(47,208,143,.22)}.cal .b{background:rgba(255,95,95,.22)}
+h2{font:600 30px Fraunces,Georgia,serif;margin:70px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:16px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}.c h3{margin:0 0 6px;font-size:17px;color:var(--acc)}.c p{margin:0;color:var(--mute);font-size:15px}
+.steps{counter-reset:s}.steps .c:before{counter-increment:s;content:counter(s);display:inline-flex;width:30px;height:30px;border-radius:50%;background:var(--acc);color:#0a0d13;align-items:center;justify-content:center;font-weight:500;margin-bottom:10px}
+.end{text-align:center;margin:70px 0 30px;padding:40px 18px;background:var(--card);border:1px solid var(--line);border-radius:18px}
+footer{text-align:center;color:var(--mute);font-size:13px;padding:30px 0 40px}footer b{color:var(--acc);letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="w">
+<nav><a class="brand" href="./"><svg viewBox="-50 -50 100 100" aria-hidden="true"><g fill="#d4af37"><path transform="rotate(0) translate(0,-5) scale(.8,1)" d="M0 0C-14-10-22-30-10-40C-4-46 0-40 0-34C0-40 4-46 10-40C22-30 14-10 0 0Z"/><path transform="rotate(72) translate(0,-5) scale(.8,1)" d="M0 0C-14-10-22-30-10-40C-4-46 0-40 0-34C0-40 4-46 10-40C22-30 14-10 0 0Z"/><path transform="rotate(144) translate(0,-5) scale(.8,1)" d="M0 0C-14-10-22-30-10-40C-4-46 0-40 0-34C0-40 4-46 10-40C22-30 14-10 0 0Z"/><path transform="rotate(216) translate(0,-5) scale(.8,1)" d="M0 0C-14-10-22-30-10-40C-4-46 0-40 0-34C0-40 4-46 10-40C22-30 14-10 0 0Z"/><path transform="rotate(288) translate(0,-5) scale(.8,1)" d="M0 0C-14-10-22-30-10-40C-4-46 0-40 0-34C0-40 4-46 10-40C22-30 14-10 0 0Z"/></g></svg>Bulls Journal</a><a class="btn o" href="./">Open app</a></nav>
+
+<header>
+<h1>Trade with discipline. <em>Review with honesty.</em></h1>
+<p class="sub">Bulls Journal is a free trading journal for your phone. Log every trade, catch your repeat mistakes, size your risk and watch your discipline score grow.</p>
+<div class="cta"><a class="btn" href="./">Get started free</a><a class="btn o" href="#features">See features</a></div>
+<p class="note">No download needed. Open the link and add it to your home screen.</p>
+
+<div class="mock" aria-label="Sample dashboard">
+<small>Sample data. Your own numbers appear after you log trades.</small>
+<div class="g3"><div class="k"><span>Net P&amp;L</span><b class="win">$1,284.50</b></div><div class="k"><span>Win rate</span><b>58%</b></div><div class="k"><span>Profit factor</span><b>1.74</b></div><div class="k"><span>Bulls Score</span><b style="color:var(--acc)">72</b></div></div>
+<div class="row">
+<div><small>This month</small><div class="cal" style="margin-top:6px"><i></i><i class="a">3</i><i class="b">4</i><i class="a">5</i><i class="a">6</i><i></i><i></i><i class="a">9</i><i class="b">10</i><i class="a">11</i><i></i><i class="a">13</i><i></i><i></i><i class="b">16</i><i class="a">17</i><i class="a">18</i><i class="a">19</i><i class="b">20</i><i></i><i></i></div></div>
+<div><small>Equity curve</small><svg viewBox="0 0 300 130" style="width:100%;margin-top:6px"><path d="M5 110 L45 95 L80 102 L120 70 L160 78 L200 45 L240 52 L295 15" fill="none" stroke="#2fd08f" stroke-width="3" stroke-linejoin="round"/></svg></div>
+</div></div>
+</header>
+
+<div class="chips"><span>Trade journal</span><span>Mistake review</span><span>Bulls Score</span><span>Lot size calculator</span><span>Gold news calendar</span><span>Reminders</span><span>Broker import</span><span>Before and after screenshots</span></div>
+
+<section id="features"><h2>Everything a disciplined trader needs</h2>
+<div class="grid">
+<div class="c"><h3>Log in seconds</h3><p>Copy your last trade, tap a symbol, and type a stop by distance. Typo checks warn you before a wrong price is saved.</p></div>
+<div class="c"><h3>Plan first, close later</h3><p>Save your entry, stop and target when you take the trade. Add the exit when it closes.</p></div>
+<div class="c"><h3>Find your repeat mistakes</h3><p>Tag mistakes on each trade and get a weekly review of overtrading, missing stops and revenge sizing.</p></div>
+<div class="c"><h3>Bulls Score</h3><p>One score from win rate, profit factor, recovery, consistency and discipline, with a radar chart that shows your weak spot.</p></div>
+<div class="c"><h3>Risk and lot size</h3><p>Set 2 to 3 percent risk and get the lot size for Gold and forex, from a $100 account to $100k.</p></div>
+<div class="c"><h3>News that moves Gold</h3><p>A high-impact calendar for USD events like NFP, CPI and FOMC, plus XAUUSD headlines.</p></div>
+<div class="c"><h3>Win rate by day, hour, session</h3><p>See when you trade best and when you should stay out.</p></div>
+<div class="c"><h3>Import from MT4 and MT5</h3><p>Bring in your broker history with exact entries, exits and profit.</p></div>
+<div class="c"><h3>Reminders and daily quotes</h3><p>Phone alarms for your routine and a fresh discipline quote every day.</p></div>
+</div></section>
+
+<section><h2>How it works</h2>
+<div class="grid steps">
+<div class="c"><h3>Create your account</h3><p>Sign up with your email. Your trades stay private to you.</p></div>
+<div class="c"><h3>Log and tag</h3><p>Record each trade, attach your screenshots and tag any mistakes honestly.</p></div>
+<div class="c"><h3>Review every week</h3><p>Open Insights, read your findings and fix one thing next week.</p></div>
+</div></section>
+
+<section><h2>Install it on your phone</h2>
+<div class="grid"><div class="c"><h3>Android</h3><p>Open the app in Chrome or Brave, tap the menu, then <b>Install app</b> or <b>Add to Home screen</b>.</p></div>
+<div class="c"><h3>iPhone</h3><p>Open it in Safari, tap <b>Share</b>, then <b>Add to Home Screen</b>.</p></div></div></section>
+
+<div class="end"><h2 style="margin-top:0">Your next trade deserves a plan.</h2><p class="sub" style="margin:0 auto 20px">Start your journal today. It takes a minute.</p><a class="btn" href="./">Open Bulls Journal</a></div>
+</div>
+<footer>Created by <b>CARTEL</b> · Bulls Journal<br>Trading involves risk. Bulls Journal is a record-keeping tool, not financial advice. Sample numbers above are examples only.</footer>
+</body>
+</html>
