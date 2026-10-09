@@ -86,14 +86,14 @@ svg{width:100%;height:auto;display:block}
 <p class="wide" style="margin:0;color:var(--mute);font-size:13px">New here? Type your email and a password (6+ characters), then tap Create account.</p></form></div>
 <div id="app" hidden>
 <p class="sub"><span id="who"></span> <select id="cur" aria-label="Currency"></select> <select id="acct" aria-label="Account type"><option value="std">Standard account ($)</option><option value="cent">Cent account (USC)</option></select> <button class="ghost" id="share" type="button">Share</button> <button class="ghost" id="logout" type="button">Log out</button></p>
-<div class="nav"><button id="tab-dash" class="on" onclick="show('dash')">📊<br>Dashboard</button><button id="tab-journal" onclick="show('journal')">📓<br>Journal</button><button id="tab-insights" onclick="show('insights')">🔍<br>Insights</button><button id="tab-plan" onclick="show('plan')">🧭<br>Plan</button><button id="tab-news" onclick="show('news')">📰<br>News</button></div>
+<div class="nav"><button id="tab-dash" class="on" onclick="show('dash')">📊<br>Dashboard</button><button id="tab-journal" onclick="show('journal')">📓<br>Journal</button><button id="tab-gate" onclick="show('gate')">🚦<br>Gate</button><button id="tab-insights" onclick="show('insights')">🔍<br>Insights</button><button id="tab-plan" onclick="show('plan')">🧭<br>Plan</button><button id="tab-news" onclick="show('news')">📰<br>News</button></div>
 <div id="t-dash">
 <div class="card"><h2>Bulls Score</h2><div class="sc"><div id="radar" style="flex:1;min-width:220px"></div><div><div id="scoreN" style="font:600 52px Fraunces,Georgia,serif;color:var(--acc);line-height:1"></div><div id="scoreL" style="font-weight:600"></div><p id="scoreH" style="color:var(--mute);font-size:12px;max-width:200px"></p></div></div></div>
 <div class="stats" id="dk"></div>
 <div class="card"><h2>Trade outcomes</h2><div id="donut"></div></div>
 <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><button class="ghost" id="cp" type="button" aria-label="Previous month">‹</button><h2 id="cm" style="margin:0"></h2><button class="ghost" id="cn" type="button" aria-label="Next month">›</button></div><div class="cal" id="dcal"></div></div>
 <div class="card"><h2>Recent trades</h2><div id="recent"></div></div></div>
-<div id="t-journal" hidden><div class="card dq"><small style="color:var(--mute)">Today's discipline</small><q id="dqT"></q><button class="ghost" id="dqN" type="button">Next quote</button></div><div class="stats" id="stats"></div>
+<div id="t-journal" hidden><div class="card dq"><small style="color:var(--mute)">Today's discipline</small><q id="dqT"></q><button class="ghost" id="dqN" type="button">Next quote</button></div><div class="card" id="ntJ"></div><div class="stats" id="stats"></div>
 
 
 
@@ -143,6 +143,29 @@ svg{width:100%;height:auto;display:block}
 <h3 style="margin:12px 0 4px;font-size:14px">By hour</h3><table style="min-width:0"><tbody id="wrHour"></tbody></table>
 <h3 style="margin:12px 0 4px;font-size:14px">By session</h3><table style="min-width:0"><tbody id="wrSes"></tbody></table></div>
 <div class="card"><h2>By strategy</h2><table style="min-width:0"><tbody id="byTag"></tbody></table></div></div>
+<div id="t-gate" hidden>
+<div id="kgLock"></div><div class="card" id="ntG"></div>
+<div class="stats" id="kgStats"></div>
+<div class="card"><h2>1. Checklist <span id="kgCkN" style="font-size:13px"></span></h2><div id="kgCk"></div></div>
+<div class="card"><h2>2. Plan the trade</h2><form onsubmit="return false">
+<label>Symbol<input id="kgSym" value="XAUUSD" autocapitalize="characters"></label>
+<label>Side<select id="kgSide"><option>Long</option><option>Short</option></select></label>
+<label>Entry price<input id="kgEnt" type="number" step="any" inputmode="decimal"></label>
+<label>Stop-loss price<input id="kgStp" type="number" step="any" inputmode="decimal"></label>
+<label>Target price<input id="kgTgt" type="number" step="any" inputmode="decimal"></label></form>
+<div id="kgOut" style="margin-top:12px"></div>
+<button id="kgGo" type="button" disabled style="margin-top:10px;width:100%;padding:14px">Take this trade</button>
+<div id="kgMsg" style="margin-top:10px"></div></div>
+<div class="card"><h2>Gate rules</h2><form onsubmit="return false">
+<label>Account balance (USC on a cent account)<input id="kgBal" type="number" step="any" inputmode="decimal"></label>
+<label>Risk per trade<select id="kgRisk"><option value="0.5">0.5%</option><option value="1">1%</option><option value="2">2%</option></select></label>
+<label>Max lots (hard cap)<input id="kgCap" type="number" step="0.01" min="0.01" inputmode="decimal"></label>
+<label>Minimum reward:risk<select id="kgRR"><option value="1.5">1.5</option><option value="2">2</option><option value="3">3</option></select></label>
+<label>Max trades per day<input id="kgMT" type="number" step="1" min="1" inputmode="numeric"></label>
+<label>Stop after losses in a row<input id="kgMS" type="number" step="1" min="1" inputmode="numeric"></label>
+<label>Daily loss limit (same as Goals)<input id="kgDL" type="number" step="any" min="0" inputmode="decimal"></label></form>
+<p style="color:var(--mute);font-size:12px">Set these while calm. The Gate locks when you hit a limit, using the trades in your Journal. Trades taken through the Gate are saved with a [Gate] note, so your weekly review can flag trades you took without it. Not financial advice.</p></div>
+</div>
 <div id="t-plan" hidden>
 <div class="card"><h2>Pre-trade checklist <span id="ckN" style="font-size:13px"></span></h2><div id="ck"></div><button class="ghost" id="ckReset" type="button" style="margin-top:10px">Reset</button></div>
 <div class="card"><h2>Reminders</h2><div id="rpre" class="bar"></div>
@@ -192,7 +215,7 @@ function fmt(n){if(ACCT==="cent")return(n<0?"-":"")+Math.abs(n).toFixed(2)+" USC
 function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function filtered(){var q=$("q").value.trim().toLowerCase(),g=$("tagf").value;
 return trades.filter(function(t){return(!q||t.symbol.toLowerCase().indexOf(q)>-1)&&(!g||t.tag===g)}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0})}
-function render(){chips();
+function render(){chips();kgR();ntR();
 var full=filtered(),list=full.filter(isC),res=list.map(calc),n=list.length;
 var wins=res.filter(function(r){return r.pnl>0}),losses=res.filter(function(r){return r.pnl<0});
 var gw=wins.reduce(function(s,r){return s+r.pnl},0),gl=Math.abs(losses.reduce(function(s,r){return s+r.pnl},0));
@@ -238,7 +261,7 @@ c.getContext("2d").drawImage(im,0,0,c.width,c.height);c.toBlob(res,"image/jpeg",
 async function refresh(){var r=await sb.from("trades").select("*").order("date");if(r.error){alert(r.error.message);return}
 trades=r.data;urls={};var paths=trades.map(function(t){return t.shot_path}).filter(Boolean);
 if(paths.length){var s=await sb.storage.from("screenshots").createSignedUrls(paths,3600);(s.data||[]).forEach(function(x){if(x.signedUrl)urls[x.path]=x.signedUrl})}
-render()}
+render();ntLoad()}
 $("tbl").addEventListener("click",async function(e){var a=e.target,src=a.getAttribute("data-src"),id=a.getAttribute("data-id"),ed=a.getAttribute("data-edit"),cl=a.getAttribute("data-close");
 if(a.id==="more"){limit+=20;render();return}
 if(src){$("lb").innerHTML='<img src="'+src+'">';$("lb").hidden=false;return}
@@ -286,7 +309,8 @@ $("cal").innerHTML=h;weekly();winrates(list,res)}
 function weekly(){var off=+$("wk").value,now=new Date(),dow=(now.getDay()+6)%7,mon=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow-7*off),sun=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+6);
 var iso=function(d){return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)},a=iso(mon),b=iso(sun),key=function(t){return t.date+(t.created_at||"")};
 var L=trades.filter(function(t){return t.date>=a&&t.date<=b&&isC(t)}).sort(function(x,y){return key(x)<key(y)?-1:1}),F=[],out=$("wkOut");
-if(!L.length){out.innerHTML='<div class="empty">No trades logged from '+a+' to '+b+'.</div>';return}
+var nz=Object.keys(NT||{}).filter(function(d){return d>=a&&d<=b}).length;
+if(!L.length){out.innerHTML='<div class="empty">No trades logged from '+a+' to '+b+'.'+(nz?' <b class="win">'+nz+' no-trade day(s) marked. Staying out is a disciplined trade.</b>':'')+'</div>';return}
 var R=L.map(calc),n=L.length,tot=0,gw=0,fees=0,W=[],Ls=[];
 R.forEach(function(r,i){tot+=r.pnl;fees+=L[i].fees||0;if(r.pnl>0){gw+=r.pnl;W.push(r.pnl)}else if(r.pnl<0)Ls.push(r.pnl)});
 var avg=function(x){return x.length?x.reduce(function(s,v){return s+v},0)/x.length:0};
@@ -302,12 +326,14 @@ if(W.length&&Ls.length&&Math.abs(avg(Ls))>avg(W))add(2,'Average loss ('+fmt(avg(
 var rs=R.filter(function(r){return r.r!==null});if(rs.length&&avg(rs.map(function(r){return r.r}))<1)add(1,'Average R is below 1 ('+avg(rs.map(function(r){return r.r})).toFixed(2)+'R). Aim for setups that pay more than they risk.');
 if(+G.loss){var br=Object.keys(D).filter(function(d){return D[d].reduce(function(s,t){return s+calc(t).pnl},0)<=-G.loss});if(br.length)add(2,'Hit your daily loss limit on '+br.join(", ")+'. Did you keep trading?')}
 if(gw>0&&fees>gw*.25)add(1,'Fees took '+Math.round(fees/gw*100)+'% of your gross profit.');
+var og=L.filter(function(t){return KG.since&&t.date>=KG.since&&(t.notes||"").indexOf("[Gate]")!==0}).length;if(og)add(2,og+' trade(s) were taken <b>without the Gate</b>. These are your off-plan trades.');
 var nn=L.filter(function(t){return !t.notes}).length;if(nn)add(1,nn+' trade(s) have <b>no notes</b>. Notes are how patterns show up.');
 [["session","session"],["timeframe","timeframe"],["tag","strategy"],["symbol","symbol"]].forEach(function(p){var G2={};L.forEach(function(t,i){var k=t[p[0]];if(k){var o=G2[k]=G2[k]||{n:0,p:0};o.n++;o.p+=R[i].pnl}});
 var w=Object.keys(G2).sort(function(x,y){return G2[x].p-G2[y].p})[0];if(w&&G2[w].p<0&&G2[w].n>=2)add(1,'Weakest '+p[1]+': <b>'+esc(w)+'</b> ('+fmt(G2[w].p)+' over '+G2[w].n+' trades).')});
+if(nz)add(0,'<b>'+nz+' no-trade day(s)</b> this week. Staying out is a disciplined trade.');
 if(!F.length)add(0,'No major mistake patterns found. Keep logging honestly.');
 out.innerHTML='<p>'+a+' to '+b+' · '+n+' trades · <b class="'+(tot>=0?"win":"loss")+'">'+fmt(tot)+'</b></p><ul class="fl">'+F.join("")+'</ul>'}
-function show(n){["dash","journal","insights","plan","news"].forEach(function(k){$("t-"+k).hidden=k!==n;$("tab-"+k).classList.toggle("on",k===n)});if(n==="news")loadNews()}
+function show(n){["dash","journal","gate","insights","plan","news"].forEach(function(k){$("t-"+k).hidden=k!==n;$("tab-"+k).classList.toggle("on",k===n)});if(n==="news")loadNews()}
 function tv(id,file,cfg){var b=$(id);b.innerHTML='<div class="tradingview-widget-container__widget"></div>';var sc=document.createElement("script");sc.src="https://s3.tradingview.com/external-embedding/embed-widget-"+file+".js";sc.async=true;sc.text=JSON.stringify(cfg);b.appendChild(sc)}
 var newsOn=false,NM="gold";
 function loadNews(){if(newsOn)return;newsOn=true;ev();
@@ -399,7 +425,7 @@ $("donut").innerHTML=n?'<div class="sc"><svg viewBox="0 0 120 120" style="width:
 var now=new Date(),mo=new Date(now.getFullYear(),now.getMonth()+dOff,1),y=mo.getFullYear(),m=mo.getMonth(),sh=function(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":v.toFixed(0)},
 h="SMTWTFS".split("").map(function(d){return'<div style="min-height:0;border:0;text-align:center;color:var(--mute)">'+d+'</div>'}).join("");
 for(var i=0;i<mo.getDay();i++)h+="<div></div>";
-for(var d=1,nd=new Date(y,m+1,0).getDate();d<=nd;d++){var key=y+"-"+("0"+(m+1)).slice(-2)+"-"+("0"+d).slice(-2),v=D[key];h+='<div class="'+(v>0?"w":v<0?"l":"")+'">'+d+(v===undefined?"":'<br><b>'+sh(v)+'</b><br>'+C2[key]+'t')+'</div>'}
+for(var d=1,nd=new Date(y,m+1,0).getDate();d<=nd;d++){var key=y+"-"+("0"+(m+1)).slice(-2)+"-"+("0"+d).slice(-2),v=D[key];h+='<div class="'+(v>0?"w":v<0?"l":"")+'"'+(v===undefined&&NT&&NT[key]?' style="border-color:var(--acc)" title="No-trade day"':'')+'>'+d+(v===undefined?(NT&&NT[key]?'<br>🛡':''):'<br><b>'+sh(v)+'</b><br>'+C2[key]+'t')+'</div>'}
 $("dcal").innerHTML=h;$("cm").textContent=mo.toLocaleString(undefined,{month:"long",year:"numeric"});
 $("recent").innerHTML=n?list.slice(-5).reverse().map(function(t){var p=calc(t).pnl;return'<div class="ckl" style="justify-content:space-between"><span><b>'+esc(t.symbol)+'</b> '+t.side+' · '+t.date+'</span><b class="'+(p>=0?"win":"loss")+'">'+fmt(p)+'</b></div>'}).join(""):'<div class="empty">No closed trades yet.</div>'}
 $("cp").onclick=function(){dOff--;render()};$("cn").onclick=function(){dOff++;render()};
@@ -458,6 +484,78 @@ $("gl").onchange=$("gt").onchange=function(){G={loss:$("gl").value,target:$("gt"
 $("f").date.value=today();$("f").elements.trade_time.value=nowT();render();
 sb.auth.getSession().then(function(r){setUser(r.data.session&&r.data.session.user)});
 function parse(l){var o=[],c="",q=false;for(var i=0;i<l.length;i++){var ch=l[i];if(q){if(ch==='"'&&l[i+1]==='"'){c+='"';i++}else if(ch==='"')q=false;else c+=ch}else if(ch==='"')q=true;else if(ch===","){o.push(c);c=""}else c+=ch}o.push(c);return o}
+
+var KG={bal:"",risk:"1",cap:"0.01",rr:"2",mt:"3",ms:"2",since:""},KC=["Daily trend and 4-hour structure checked","Stop-loss placed before entry, where my idea is wrong","Entry matches my plan (not a chase)","I am not trying to win back a loss","I am calm: not rushed, bored or angry","No major news in the next 30 minutes","I will not move or remove my stop-loss","This trade is within today's limits"];
+function ksave(){try{localStorage.setItem("bj-gate",JSON.stringify(KG))}catch(e){}}
+try{var _k=JSON.parse(localStorage.getItem("bj-gate")||"{}");for(var _i in _k)KG[_i]=_k[_i]}catch(e){}
+if(!KG.since){KG.since=today();ksave()}
+function kstat(){var td=today(),T=trades.filter(function(t){return t.date===td}),C=T.filter(isC).sort(function(a,b){return(a.created_at||"")<(b.created_at||"")?-1:1}),pnl=0,st=0,dl=+G.loss||0,mt=+KG.mt||3,ms=+KG.ms||2,why=[];
+C.forEach(function(t){var p=calc(t).pnl;pnl+=p;st=p<0?st+1:0});
+if(NT&&NT[td])why.push("You marked today as a no-trade day. Undo it below only if you truly changed your plan before the market moved.");
+if(T.length>=mt)why.push("You have used "+T.length+" of "+mt+" trades today.");
+if(dl&&pnl<=-dl)why.push("You have lost "+fmt(-pnl)+" today. Your limit is "+fmt(dl)+".");
+if(st>=ms)why.push(st+" losses in a row. Your limit is "+ms+".");
+return{T:T,pnl:pnl,st:st,why:why,open:T.length-C.length,mt:mt,ms:ms,dl:dl}}
+function kgR(){if(!$("kgLock")||!KG)return;var s=kstat();
+$("kgLock").innerHTML=s.why.length?'<div class="card" style="border:2px solid var(--loss)"><h2 class="loss">Stop. Done for today.</h2>'+s.why.map(function(w){return"<p>"+w+"</p>"}).join("")+'<p>Close the chart. The next trade you take now is the one that hurts. Review today in the Journal tab instead.</p></div>':(s.dl?"":'<div class="card"><b class="loss">No daily loss limit set.</b> Enter one in Gate rules below. Without it the Gate cannot lock you out after a bad day.</div>');
+$("kgStats").innerHTML=[["Trades today",s.T.length+" / "+s.mt,""],["Closed P&amp;L today",fmt(s.pnl),s.pnl<0?"loss":s.pnl>0?"win":""],["Loss streak",s.st+" / "+s.ms,s.st>=s.ms?"loss":""],["Open trades",s.open,""]].map(function(x){return'<div class="stat"><span>'+x[0]+'</span><b class="'+x[2]+'">'+x[1]+"</b></div>"}).join("");
+kgU()}
+function kgCalc(){var sym=$("kgSym").value.toUpperCase().trim(),sd=$("kgSide").value,e=+$("kgEnt").value,st=+$("kgStp").value,tg=+$("kgTgt").value,bal=(+KG.bal||0)/(ACCT==="cent"?100:1),r=+KG.risk,cap=+KG.cap||0.01,d=Math.abs(e-st),o={sym:sym,sd:sd,e:e,st:st,tg:tg,ok:false,msg:[]},c=cs(sym);
+if(c!==100&&c!==100000){o.msg.push("The Gate supports gold and forex pairs only.");return o}
+if(!(e>0&&st>0)){o.msg.push("Enter your entry and stop-loss prices.");return o}
+var sideOk=sd==="Long"?(st<e&&(!tg||tg>e)):(st>e&&(!tg||tg<e));
+if(!sideOk){o.msg.push("Stop-loss or target is on the wrong side of entry for a "+sd+".");return o}
+if(!(bal>0)){o.msg.push("Set your account balance in Gate rules below (in USC if you chose a cent account).");return o}
+var ins=/^(XAU|GOLD)/.test(sym)?"XAU":(sym.slice(3,6)==="JPY"?"JPY":"EUR"),pu=ins==="JPY"?100000/e:ins==="XAU"?100:100000,L=Math.floor(lots(bal,r,d,e,ins)*100)/100;
+o.calc=L;o.lots=Math.min(L,cap);o.rr=tg?Math.abs(tg-e)/d:0;o.real=o.lots*d*pu*(ACCT==="cent"?100:1);
+if(o.lots<0.01){o.msg.push("Your stop is too wide for your risk, or your cap is below 0.01. Tighten the stop or skip this trade.");o.lots=0;return o}
+if(!tg){o.msg.push("Add a target to check reward:risk.");return o}
+if(o.rr<(+KG.rr||2)){o.msg.push("Reward:risk "+o.rr.toFixed(1)+" is below your minimum of "+KG.rr+". Skip it or find a better target.");return o}
+o.ok=true;return o}
+function kgU(){if(!$("kgCk"))return;var s=kstat(),n=$("kgCk").querySelectorAll("input:checked").length,all=n===KC.length,o=kgCalc(),h="";
+$("kgCkN").innerHTML=n+"/"+KC.length+" · "+(all?'<b class="win">Ready</b>':'<b class="loss">Not ready</b>');
+if(o.lots)h+="Lot size: <b>"+o.lots.toFixed(2)+"</b>"+(o.lots<o.calc?" (capped; risk maths allowed "+o.calc.toFixed(2)+")":"")+"<br>Real risk: <b>"+usd(o.real)+"</b> · Reward:risk <b>"+(o.rr?o.rr.toFixed(1):"-")+"</b><br>";
+h+=o.msg.map(function(m){return'<span class="loss">'+m+"</span><br>"}).join("");
+$("kgOut").innerHTML=h;var go=$("kgGo");go.disabled=!(o.ok&&all&&!s.why.length);
+go.textContent=s.why.length?"Locked for today":(o.ok?"Take this trade at "+o.lots.toFixed(2)+" lots or less":"Take this trade")}
+$("kgCk").innerHTML=KC.map(function(c){return'<label class="ckl"><input type="checkbox">'+c+"</label>"}).join("");
+$("kgCk").onchange=kgU;
+["kgSym","kgSide","kgEnt","kgStp","kgTgt"].forEach(function(i){$(i).addEventListener("input",kgU)});
+[["kgBal","bal"],["kgRisk","risk"],["kgCap","cap"],["kgRR","rr"],["kgMT","mt"],["kgMS","ms"]].forEach(function(p){$(p[0]).value=KG[p[1]];$(p[0]).addEventListener("change",function(){KG[p[1]]=this.value;ksave();kgR()})});
+$("kgDL").value=G.loss||"";
+$("kgDL").addEventListener("change",function(){G.loss=this.value;try{localStorage.setItem("bj-goals",JSON.stringify(G))}catch(e){}$("gl").value=this.value;render()});
+$("kgGo").onclick=async function(){var o=kgCalc(),s=kstat();if(!o.ok||s.why.length)return;this.disabled=true;
+var row={date:today(),symbol:o.sym,side:o.sd,entry:o.e,exit:null,target:o.tg,size:o.lots,stop:o.st,fees:0,tag:"",notes:"[Gate] checklist "+KC.length+"/"+KC.length+" · planned R:R "+o.rr.toFixed(1)+" · risk "+KG.risk+"%",session:"",trade_time:nowT(),timeframe:"",mistakes:"",shot_path:null,result_path:null};
+var r=await sb.from("trades").insert(row);if(r.error){alert("Could not save: "+r.error.message);kgU();return}
+Array.prototype.forEach.call($("kgCk").querySelectorAll("input"),function(c){c.checked=false});["kgEnt","kgStp","kgTgt"].forEach(function(i){$(i).value=""});
+await refresh();$("kgMsg").innerHTML='<b class="win">Saved to your Journal as an open trade.</b> Now place it in MT5 with the stop-loss already set, at '+o.lots.toFixed(2)+" lots or less. Close it in the Journal tab when it finishes."};
+
+var NT={};try{NT=JSON.parse(localStorage.getItem("bj-notrade")||"{}")||{}}catch(e){NT={}}
+function nsave(){try{localStorage.setItem("bj-notrade",JSON.stringify(NT))}catch(e){}}
+function ntSet(d){if(!d){alert("Pick a date first.");return}if(d>today()){alert("You can only mark today or a past day.");return}
+if(trades.some(function(t){return t.date===d})){alert("You logged a trade on "+d+", so it can't be a no-trade day.");return}
+NT[d]=1;nsave();render();ntPush(d)}
+function ntUnset(d){delete NT[d];nsave();render();ntDel(d)}
+var NTdb=false,NTu=null;
+async function ntLoad(){if(!user||NTu===user.id)return;var u=user.id;
+try{var r=await sb.from("no_trade_days").select("day");if(r.error)throw r.error;
+var db={},add=[],lu=null;(r.data||[]).forEach(function(x){db[String(x.day).slice(0,10)]=1});
+try{lu=localStorage.getItem("bj-notrade-uid")}catch(e){}
+if(!lu||lu===u)Object.keys(NT).forEach(function(d){if(!db[d]){db[d]=1;add.push({day:d})}});
+if(add.length){var w=await sb.from("no_trade_days").insert(add);if(w.error)throw w.error}
+NT=db;NTdb=true;NTu=u;try{localStorage.setItem("bj-notrade-uid",u)}catch(e){}nsave();render()}
+catch(e){NTdb=false;NTu=u;ntR()}}
+async function ntPush(d){if(!NTdb||!user)return;var r=await sb.from("no_trade_days").insert({day:d});if(r.error&&r.error.code!=="23505")alert("Saved on this device only: "+r.error.message)}
+async function ntDel(d){if(!NTdb||!user)return;var r=await sb.from("no_trade_days").delete().eq("day",d);if(r.error)alert("Could not remove it from your account: "+r.error.message)}
+function ntR(){if(!NT||!$("ntJ"))return;var td=today(),mk=!!NT[td],mo=td.slice(0,7),days=Object.keys(NT).sort().reverse(),nm=days.filter(function(d){return d.slice(0,7)===mo}).length,h="<h2>No-trade day</h2>";
+h+=mk?'<p><b class="win">✓ Today is marked as a no-trade day.</b> The Gate is locked until tomorrow. Staying out is a position.</p><button class="ghost" type="button" data-ntu="'+td+'">Undo</button>':'<p style="color:var(--mute);font-size:13px">Chose to stay out? Mark it. It counts as a disciplined day and locks the Gate for today.</p><button class="ghost" type="button" data-nts="'+td+'">Mark today: no trades</button>';
+h+='<div style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap"><input type="date" max="'+td+'" aria-label="Date" style="width:auto"><button class="ghost" type="button" data-ntd="1">Mark this date</button></div><p style="color:var(--mute);font-size:12px">'+nm+" no-trade day(s) this month. "+(NTdb?"Synced to your account.":"Saved on this device only. Run the SQL setup to sync.")+"</p>";
+if(days.length)h+=days.slice(0,5).map(function(d){return'<div class="ckl" style="justify-content:space-between"><span>🛡 '+d+'</span><button class="ghost" type="button" data-ntu="'+d+'" aria-label="Remove '+d+'">✕</button></div>'}).join("");
+$("ntJ").innerHTML=h;$("ntG").innerHTML=h}
+function ntClick(e){var a=e.target,x=a.getAttribute&&a.getAttribute("data-nts"),u=a.getAttribute&&a.getAttribute("data-ntu");
+if(a.getAttribute&&a.getAttribute("data-ntd")){var inp=a.parentNode.querySelector("input");ntSet(inp.value);return}
+if(x)ntSet(x);else if(u)ntUnset(u)}
+$("ntJ").addEventListener("click",ntClick);$("ntG").addEventListener("click",ntClick);
 function today(){return new Date().toISOString().slice(0,10)}if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
