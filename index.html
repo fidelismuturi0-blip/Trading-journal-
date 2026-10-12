@@ -210,7 +210,7 @@ function cs(s){s=String(s||"").toUpperCase();return/^(XAU|GOLD)/.test(s)?100:/^(
 function mult(t){var m=cs(t.symbol);return String(t.symbol||"").toUpperCase().slice(3,6)==="JPY"?m/(+t.entry||1):m}
 function calc(t){var m=mult(t),rk=t.stop?Math.abs(t.entry-t.stop)*t.size*m:0;
 if(t.profit!=null){var pf=+t.profit;return{pnl:pf,r:rk?pf/rk:null}}
-var d=t.side==="Long"?t.exit-t.entry:t.entry-t.exit,pnl=d*t.size*m-t.fees;return{pnl:pnl,r:rk?pnl/rk:null}}
+var d=t.side==="Long"?t.exit-t.entry:t.entry-t.exit,pnl=d*t.size*m-t.fees;if(slN(t)>0&&t.stop){var n=entN(t);pnl=(n-slN(t))*(t.size/n)*d*m+slAmt(t)-t.fees}return{pnl:pnl,r:rk?pnl/rk:null}}
 
 function $(i){return document.getElementById(i)}
 function fmt(n){if(ACCT==="cent")return(n<0?"-":"")+Math.abs(n).toFixed(2)+" USC";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:CUR,minimumFractionDigits:2}).format(n)}catch(e){return n.toFixed(2)}}
@@ -568,7 +568,9 @@ function entN(t){var m=/\[Entries:(\d+)\]/i.exec(t&&t.notes||"");return m?Math.m
 function stripE(n){return String(n||"").replace(/^\s*(\[(Entries|SL):\d+\]\s*)+/i,"")}
 function slN(t){var m=/\[SL:(\d+)\]/i.exec(t&&t.notes||"");return m?Math.min(+m[1],entN(t)):0}
 function slAmt(t){var k=slN(t);if(!k||!t.stop)return 0;return -k*(t.size/entN(t))*Math.abs(t.entry-t.stop)*mult(t)}
-function slB(t){var k=slN(t);if(!k)return"";return'<small class="loss" title="'+k+' of '+entN(t)+' entries hit the stop-loss">SL ×'+k+(t.stop?" · "+fmt(slAmt(t)):" · no stop price set")+"</small>"}
+function restAmt(t){var k=slN(t);if(!k||!isC(t))return null;var n=entN(t),d2=t.side==="Long"?t.exit-t.entry:t.entry-t.exit;return(n-k)*(t.size/n)*d2*mult(t)}
+function slB(t){var k=slN(t);if(!k)return"";var n=entN(t),ra=restAmt(t),h='<small class="loss" title="'+k+' of '+n+' entries hit the stop-loss">SL ×'+k+(t.stop?" · "+fmt(slAmt(t)):" · no stop price set")+"</small>";
+if(ra!==null&&n>k)h+='<br><small class="'+(ra>=0?"win":"loss")+'">'+(n-k)+(ra>=0?" in profit · ":" closed at a loss · ")+fmt(ra)+"</small>";return h}
 function withE(n,e,sl){e=Math.max(1,Math.floor(+e||1));sl=Math.min(e,Math.max(0,Math.floor(+sl||0)));return(e>1?"[Entries:"+e+"] ":"")+(sl>0?"[SL:"+sl+"] ":"")+stripE(n)}
 function entT(a){return a.reduce(function(x,t){return x+entN(t)},0)}
 var STKM={};
@@ -580,9 +582,9 @@ function stkR(){var el=$("stk");if(!el)return;STKM={};var G2=stkG(trades);G2.for
 if(!G2.length){el.hidden=true;el.innerHTML="";return}
 G2.sort(function(x,y){return x.k<y.k?1:-1});
 el.innerHTML='<h2 style="margin:0 0 8px;font-size:15px">Stacked positions</h2><p style="color:var(--mute);font-size:12px;margin:0 0 8px">Several entries on the same day, symbol and side are grouped as one position.</p>'+G2.slice(0,4).map(function(g){
-var a=g.a,sz=0,ev=0,pl=0,cn=0,rk=0,ns=0,en=entT(a),sl=0,sa=0;a.forEach(function(t){sz+=+t.size;ev+=t.entry*t.size;if(isC(t)){pl+=calc(t).pnl;cn++}if(t.stop)rk+=Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl);else ns++});
-a.forEach(function(t){sl+=slN(t);sa+=slAmt(t)});var ad=stkAD(a),p=g.k.split("|");
-return'<div class="ckl" style="display:block;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><b>'+esc(p[1])+" "+p[2]+"</b> · "+p[0]+" · "+en+" entr"+(en>1?"ies":"y")+(ad?' <b class="loss">Averaged down</b>':"")+'<br><span style="color:var(--mute);font-size:13px">Total size '+(Math.round(sz*100)/100)+" · avg entry "+(ev/sz).toFixed(2)+" · stop risk "+fmt(rk)+(ns?" ("+ns+" with no stop)":"")+(sl?' · <b class="loss">'+sl+" stopped out ("+fmt(sa)+")</b>":"")+"<br>"+(cn===a.length?"Combined P&amp;L ":"Closed so far ("+cn+" of "+a.length+") ")+'<b class="'+(pl>=0?"win":"loss")+'">'+fmt(pl)+"</b></span></div>"}).join("");
+var a=g.a,sz=0,ev=0,pl=0,cn=0,rk=0,ns=0,en=entT(a),sl=0,sa=0,ra2=0,rc=0;a.forEach(function(t){sz+=+t.size;ev+=t.entry*t.size;if(isC(t)){pl+=calc(t).pnl;cn++}if(t.stop)rk+=Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl);else ns++});
+a.forEach(function(t){sl+=slN(t);sa+=slAmt(t);var x=restAmt(t);if(x!==null){ra2+=x;rc+=entN(t)-slN(t)}});var ad=stkAD(a),p=g.k.split("|");
+return'<div class="ckl" style="display:block;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><b>'+esc(p[1])+" "+p[2]+"</b> · "+p[0]+" · "+en+" entr"+(en>1?"ies":"y")+(ad?' <b class="loss">Averaged down</b>':"")+'<br><span style="color:var(--mute);font-size:13px">Total size '+(Math.round(sz*100)/100)+" · avg entry "+(ev/sz).toFixed(2)+" · stop risk "+fmt(rk)+(ns?" ("+ns+" with no stop)":"")+(sl?' · <b class="loss">'+sl+" stopped out ("+fmt(sa)+")</b>":"")+(sl&&rc?' · <b class="'+(ra2>=0?"win":"loss")+'">'+rc+(ra2>=0?" in profit ":" closed at a loss ")+fmt(ra2)+"</b>":"")+"<br>"+(cn===a.length?"Combined P&amp;L ":"Closed so far ("+cn+" of "+a.length+") ")+'<b class="'+(pl>=0?"win":"loss")+'">'+fmt(pl)+"</b></span></div>"}).join("");
 el.hidden=false}
 function today(){return new Date().toISOString().slice(0,10)}if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
