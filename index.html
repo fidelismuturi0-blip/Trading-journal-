@@ -114,7 +114,7 @@ svg{width:100%;height:auto;display:block}
 <label>Strategy / tag<input name="tag" placeholder="Breakout"></label>
 <label>Session<select name="session"><option value="">-</option><option>Asia</option><option>London</option><option>New York</option><option>Overlap</option></select></label>
 <label>Timeframe<select name="timeframe"><option value="">-</option><option>M1</option><option>M5</option><option>M15</option><option>M30</option><option>H1</option><option>H4</option><option>D1</option></select></label>
-<div class="wide"><span style="font-size:12px;color:var(--mute)">Mistakes made on this trade (be honest)</span><div class="chk"><label><input type="checkbox" name="mistake" value="FOMO entry">FOMO entry</label><label><input type="checkbox" name="mistake" value="Revenge trade">Revenge trade</label><label><input type="checkbox" name="mistake" value="Moved or removed stop">Moved or removed stop</label><label><input type="checkbox" name="mistake" value="Exited too early">Exited too early</label><label><input type="checkbox" name="mistake" value="Held loser too long">Held loser too long</label><label><input type="checkbox" name="mistake" value="Oversized">Oversized</label><label><input type="checkbox" name="mistake" value="Broke my plan">Broke my plan</label><label><input type="checkbox" name="mistake" value="Overtraded">Overtraded</label></div></div>
+<div class="wide"><span style="font-size:12px;color:var(--mute)">Mistakes made on this trade (be honest)</span><div class="chk"><label><input type="checkbox" name="mistake" value="FOMO entry">FOMO entry</label><label><input type="checkbox" name="mistake" value="Revenge trade">Revenge trade</label><label><input type="checkbox" name="mistake" value="Moved or removed stop">Moved or removed stop</label><label><input type="checkbox" name="mistake" value="Exited too early">Exited too early</label><label><input type="checkbox" name="mistake" value="Held loser too long">Held loser too long</label><label><input type="checkbox" name="mistake" value="Oversized">Oversized</label><label><input type="checkbox" name="mistake" value="Broke my plan">Broke my plan</label><label><input type="checkbox" name="mistake" value="Overtraded">Overtraded</label><label><input type="checkbox" name="mistake" value="Added to a loser">Added to a loser</label></div></div>
 <label class="wide">Prediction screenshot (before the trade)<input type="file" name="shot" accept="image/*"></label>
 <label class="wide">Result screenshot (after the trade)<input type="file" name="shot2" accept="image/*"></label>
 <label class="wide">Notes<textarea name="notes" rows="2" placeholder="Why you took it, how you felt, what to change"></textarea></label>
@@ -131,7 +131,7 @@ svg{width:100%;height:auto;display:block}
 <input type="file" id="bfile" accept=".html,.htm,.csv,.txt" hidden>
 <input type="file" id="file" accept=".csv" hidden>
 </div>
-<div class="scroll" id="tbl"></div></div>
+<div id="stk" hidden style="margin-bottom:12px"></div><div class="scroll" id="tbl"></div></div>
 </div>
 <div id="t-insights" hidden>
 <div class="card"><h2>Weekly mistakes review</h2><select id="wk" style="margin-bottom:8px"><option value="0">This week</option><option value="1">Last week</option><option value="2">2 weeks ago</option><option value="3">3 weeks ago</option></select><div id="wkOut"></div><p style="color:var(--mute);font-size:12px">Rule-based checks on your own data. Not financial advice.</p></div>
@@ -215,7 +215,7 @@ function fmt(n){if(ACCT==="cent")return(n<0?"-":"")+Math.abs(n).toFixed(2)+" USC
 function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function filtered(){var q=$("q").value.trim().toLowerCase(),g=$("tagf").value;
 return trades.filter(function(t){return(!q||t.symbol.toLowerCase().indexOf(q)>-1)&&(!g||t.tag===g)}).sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0})}
-function render(){chips();kgR();ntR();
+function render(){chips();kgR();ntR();stkR();
 var full=filtered(),list=full.filter(isC),res=list.map(calc),n=list.length;
 var wins=res.filter(function(r){return r.pnl>0}),losses=res.filter(function(r){return r.pnl<0});
 var gw=wins.reduce(function(s,r){return s+r.pnl},0),gl=Math.abs(losses.reduce(function(s,r){return s+r.pnl},0));
@@ -229,7 +229,7 @@ var tags=[];trades.forEach(function(t){if(t.tag&&tags.indexOf(t.tag)<0)tags.push
 var cur=$("tagf").value;$("tagf").innerHTML='<option value="">All strategies</option>'+tags.map(function(t){return'<option'+(t===cur?" selected":"")+'>'+esc(t)+'</option>'}).join("");
 if(!full.length){$("tbl").innerHTML='<div class="empty">No trades yet. Log your first one above.</div>';return}
 $("tbl").innerHTML='<table><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>P&amp;L</th><th>R</th><th>Tag</th><th>Notes</th><th>Chart</th><th></th></tr>'+
-full.map(function(t){var r=isC(t)?calc(t):{pnl:0,r:null};return'<tr><td>'+t.date+'</td><td>'+esc(t.symbol)+'</td><td>'+t.side+'</td><td>'+t.entry+'</td><td>'+(isC(t)?t.exit:'<b>Open</b>')+'</td><td>'+t.size+'</td>'+(isC(t)?'<td class="'+(r.pnl>=0?"win":"loss")+'">'+fmt(r.pnl)+'</td><td>'+(r.r===null?"-":r.r.toFixed(2))+'</td>':'<td>-</td><td>-</td>')+'<td>'+esc(t.tag)+'</td><td class="note"><div class="cl" title="'+esc(t.notes)+'">'+esc(t.notes)+'</div></td><td>'+thumbs(t)+'</td><td>'+(isC(t)?"":'<button class="ghost" data-close="'+t.id+'">Close</button> ')+'<button class="ghost" data-edit="'+t.id+'">Edit</button> <button class="ghost" data-id="'+t.id+'">Delete</button></td></tr>'}).reverse().slice(0,limit).join("")+'</table>'+(full.length>limit?'<button class="ghost" id="more" style="margin-top:10px">Show more ('+(full.length-limit)+')</button>':"")}
+full.map(function(t){var r=isC(t)?calc(t):{pnl:0,r:null};return'<tr><td>'+t.date+'</td><td>'+esc(t.symbol)+'</td><td>'+t.side+stkB(t)+'</td><td>'+t.entry+'</td><td>'+(isC(t)?t.exit:'<b>Open</b>')+'</td><td>'+t.size+'</td>'+(isC(t)?'<td class="'+(r.pnl>=0?"win":"loss")+'">'+fmt(r.pnl)+'</td><td>'+(r.r===null?"-":r.r.toFixed(2))+'</td>':'<td>-</td><td>-</td>')+'<td>'+esc(t.tag)+'</td><td class="note"><div class="cl" title="'+esc(t.notes)+'">'+esc(t.notes)+'</div></td><td>'+thumbs(t)+'</td><td>'+(isC(t)?"":'<button class="ghost" data-close="'+t.id+'">Close</button> ')+'<button class="ghost" data-edit="'+t.id+'">Edit</button> <button class="ghost" data-id="'+t.id+'">Delete</button></td></tr>'}).reverse().slice(0,limit).join("")+'</table>'+(full.length>limit?'<button class="ghost" id="more" style="margin-top:10px">Show more ('+(full.length-limit)+')</button>':"")}
 function chart(res){
 var el=$("chart");if(!res.length){el.innerHTML='<div class="empty">The curve appears after your first trade.</div>';return}
 var pts=[0],c=0;res.forEach(function(r){c+=r.pnl;pts.push(c)});
@@ -321,6 +321,7 @@ var ns=L.filter(function(t){return !t.stop}).length;if(ns)add(2,ns+' of '+n+' tr
 var D={};L.forEach(function(t){D[t.date]=(D[t.date]||[]).concat(t)});
 var ot=Object.keys(D).filter(function(d){return D[d].length>4});if(ot.length)add(2,'<b>Overtrading</b>: more than 4 trades on '+ot.join(", ")+'.');
 var up=0;L.forEach(function(t,i){if(i&&R[i-1].pnl<0&&t.size>L[i-1].size*1.2)up++});if(up)add(2,'Increased size right after a loss '+up+' time(s). This is a revenge or martingale pattern.');
+var sg=stkG(L);if(sg.length){add(1,'<b>'+sg.length+' stacked position(s)</b> this week ('+sg.map(function(g){return esc(g.a[0].symbol)+' ×'+g.a.length}).join(", ")+'). Check that every add was in your plan.');sg.filter(function(g){return stkAD(g.a)}).forEach(function(g){add(2,'<b>Averaged down</b> on '+esc(g.a[0].symbol)+' '+g.a[0].side+' ('+g.k.split("|")[0]+'): you added at a worse price than your first entry. This is how small losses become big ones.')})}
 var st=0,mx=0;R.forEach(function(r){st=r.pnl<0?st+1:0;mx=Math.max(mx,st)});if(mx>=3)add(2,'<b>'+mx+' losses in a row</b>. Consider stopping for the day after 2 or 3.');
 if(W.length&&Ls.length&&Math.abs(avg(Ls))>avg(W))add(2,'Average loss ('+fmt(avg(Ls))+') is bigger than average win ('+fmt(avg(W))+'). Cut losers earlier or let winners run.');
 var rs=R.filter(function(r){return r.r!==null});if(rs.length&&avg(rs.map(function(r){return r.r}))<1)add(1,'Average R is below 1 ('+avg(rs.map(function(r){return r.r})).toFixed(2)+'R). Aim for setups that pay more than they risk.');
@@ -500,14 +501,14 @@ function kgR(){if(!$("kgLock")||!KG)return;var s=kstat();
 $("kgLock").innerHTML=s.why.length?'<div class="card" style="border:2px solid var(--loss)"><h2 class="loss">Stop. Done for today.</h2>'+s.why.map(function(w){return"<p>"+w+"</p>"}).join("")+'<p>Close the chart. The next trade you take now is the one that hurts. Review today in the Journal tab instead.</p></div>':(s.dl?"":'<div class="card"><b class="loss">No daily loss limit set.</b> Enter one in Gate rules below. Without it the Gate cannot lock you out after a bad day.</div>');
 $("kgStats").innerHTML=[["Trades today",s.T.length+" / "+s.mt,""],["Closed P&amp;L today",fmt(s.pnl),s.pnl<0?"loss":s.pnl>0?"win":""],["Loss streak",s.st+" / "+s.ms,s.st>=s.ms?"loss":""],["Open trades",s.open,""]].map(function(x){return'<div class="stat"><span>'+x[0]+'</span><b class="'+x[2]+'">'+x[1]+"</b></div>"}).join("");
 kgU()}
-function kgCalc(){var sym=$("kgSym").value.toUpperCase().trim(),sd=$("kgSide").value,e=+$("kgEnt").value,st=+$("kgStp").value,tg=+$("kgTgt").value,bal=(+KG.bal||0)/(ACCT==="cent"?100:1),r=+KG.risk,cap=+KG.cap||0.01,d=Math.abs(e-st),o={sym:sym,sd:sd,e:e,st:st,tg:tg,ok:false,msg:[]},c=cs(sym);
+function kgCalc(){var sym=$("kgSym").value.toUpperCase().trim(),sd=$("kgSide").value,e=+$("kgEnt").value,st=+$("kgStp").value,tg=+$("kgTgt").value,bal=+KG.bal||0,r=+KG.risk,cap=+KG.cap||0.01,d=Math.abs(e-st),o={sym:sym,sd:sd,e:e,st:st,tg:tg,ok:false,msg:[]},c=cs(sym);
 if(c!==100&&c!==100000){o.msg.push("The Gate supports gold and forex pairs only.");return o}
 if(!(e>0&&st>0)){o.msg.push("Enter your entry and stop-loss prices.");return o}
 var sideOk=sd==="Long"?(st<e&&(!tg||tg>e)):(st>e&&(!tg||tg<e));
 if(!sideOk){o.msg.push("Stop-loss or target is on the wrong side of entry for a "+sd+".");return o}
-if(!(bal>0)){o.msg.push("Set your account balance in Gate rules below (in USC if you chose a cent account).");return o}
+if(!(bal>0)){o.msg.push("Set your account balance in Gate rules below (in your account units, USC on a cent account).");return o}
 var ins=/^(XAU|GOLD)/.test(sym)?"XAU":(sym.slice(3,6)==="JPY"?"JPY":"EUR"),pu=ins==="JPY"?100000/e:ins==="XAU"?100:100000,L=Math.floor(lots(bal,r,d,e,ins)*100)/100;
-o.calc=L;o.lots=Math.min(L,cap);o.rr=tg?Math.abs(tg-e)/d:0;o.real=o.lots*d*pu*(ACCT==="cent"?100:1);
+o.calc=L;o.lots=Math.min(L,cap);o.rr=tg?Math.abs(tg-e)/d:0;o.real=o.lots*d*pu;
 if(o.lots<0.01){o.msg.push("Your stop is too wide for your risk, or your cap is below 0.01. Tighten the stop or skip this trade.");o.lots=0;return o}
 if(!tg){o.msg.push("Add a target to check reward:risk.");return o}
 if(o.rr<(+KG.rr||2)){o.msg.push("Reward:risk "+o.rr.toFixed(1)+" is below your minimum of "+KG.rr+". Skip it or find a better target.");return o}
@@ -515,6 +516,8 @@ o.ok=true;return o}
 function kgU(){if(!$("kgCk"))return;var s=kstat(),n=$("kgCk").querySelectorAll("input:checked").length,all=n===KC.length,o=kgCalc(),h="";
 $("kgCkN").innerHTML=n+"/"+KC.length+" · "+(all?'<b class="win">Ready</b>':'<b class="loss">Not ready</b>');
 if(o.lots)h+="Lot size: <b>"+o.lots.toFixed(2)+"</b>"+(o.lots<o.calc?" (capped; risk maths allowed "+o.calc.toFixed(2)+")":"")+"<br>Real risk: <b>"+usd(o.real)+"</b> · Reward:risk <b>"+(o.rr?o.rr.toFixed(1):"-")+"</b><br>";
+var op=o.lots?trades.filter(function(t){return !isC(t)&&String(t.symbol).toUpperCase()===o.sym&&t.side===o.sd}):[];
+if(op.length){var rk=op.reduce(function(a,t){return a+(t.stop?Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl):0)},0)+o.real,nst=op.filter(function(t){return !t.stop}).length;h+='<span class="loss">You already have '+op.length+' open '+esc(o.sym)+' '+o.sd+'. This would be entry '+(op.length+1)+' in the same position. Combined risk is about '+fmt(rk)+(+KG.bal>0?' ('+(rk/+KG.bal*100).toFixed(1)+'% of your balance)':'')+(nst?', and '+nst+' open entr'+(nst>1?'ies have':'y has')+' no stop recorded':'')+'. Only add if your plan said so.</span><br>'}
 h+=o.msg.map(function(m){return'<span class="loss">'+m+"</span><br>"}).join("");
 $("kgOut").innerHTML=h;var go=$("kgGo");go.disabled=!(o.ok&&all&&!s.why.length);
 go.textContent=s.why.length?"Locked for today":(o.ok?"Take this trade at "+o.lots.toFixed(2)+" lots or less":"Take this trade")}
@@ -556,6 +559,20 @@ function ntClick(e){var a=e.target,x=a.getAttribute&&a.getAttribute("data-nts"),
 if(a.getAttribute&&a.getAttribute("data-ntd")){var inp=a.parentNode.querySelector("input");ntSet(inp.value);return}
 if(x)ntSet(x);else if(u)ntUnset(u)}
 $("ntJ").addEventListener("click",ntClick);$("ntG").addEventListener("click",ntClick);
+
+var STKM={};
+function stkG(arr){var g={};arr.forEach(function(t){var k=t.date+"|"+String(t.symbol).toUpperCase()+"|"+t.side;(g[k]=g[k]||[]).push(t)});
+return Object.keys(g).map(function(k){return{k:k,a:g[k].sort(function(x,y){return((x.trade_time||"")+(x.created_at||""))<((y.trade_time||"")+(y.created_at||""))?-1:1})}}).filter(function(x){return x.a.length>=2})}
+function stkAD(a){for(var i=1;i<a.length;i++){for(var j=0;j<i;j++){if(a[0].side==="Long"?a[i].entry<a[j].entry:a[i].entry>a[j].entry)return true}}return false}
+function stkB(t){var m=STKM[t.id];return m?' <small title="Entry '+m.i+' of '+m.n+' in the same position (same day, symbol and side)" style="color:var(--acc)">'+m.i+"/"+m.n+"</small>":""}
+function stkR(){var el=$("stk");if(!el)return;STKM={};var G2=stkG(trades);G2.forEach(function(g){g.a.forEach(function(t,i){STKM[t.id]={n:g.a.length,i:i+1}})});
+if(!G2.length){el.hidden=true;el.innerHTML="";return}
+G2.sort(function(x,y){return x.k<y.k?1:-1});
+el.innerHTML='<h2 style="margin:0 0 8px;font-size:15px">Stacked positions</h2><p style="color:var(--mute);font-size:12px;margin:0 0 8px">Several entries on the same day, symbol and side are grouped as one position.</p>'+G2.slice(0,4).map(function(g){
+var a=g.a,sz=0,ev=0,pl=0,cn=0,rk=0,ns=0;a.forEach(function(t){sz+=+t.size;ev+=t.entry*t.size;if(isC(t)){pl+=calc(t).pnl;cn++}if(t.stop)rk+=Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl);else ns++});
+var ad=stkAD(a),p=g.k.split("|");
+return'<div class="ckl" style="display:block;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><b>'+esc(p[1])+" "+p[2]+"</b> · "+p[0]+" · "+a.length+" entries"+(ad?' <b class="loss">Averaged down</b>':"")+'<br><span style="color:var(--mute);font-size:13px">Total size '+(Math.round(sz*100)/100)+" · avg entry "+(ev/sz).toFixed(2)+" · stop risk "+fmt(rk)+(ns?" ("+ns+" with no stop)":"")+"<br>"+(cn===a.length?"Combined P&amp;L ":"Closed so far ("+cn+" of "+a.length+") ")+'<b class="'+(pl>=0?"win":"loss")+'">'+fmt(pl)+"</b></span></div>"}).join("");
+el.hidden=false}
 function today(){return new Date().toISOString().slice(0,10)}if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(function(){});
 </script>
 </body>
