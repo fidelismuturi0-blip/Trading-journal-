@@ -106,9 +106,10 @@ svg{width:100%;height:auto;display:block}
 <label>Side<select name="side"><option>Long</option><option>Short</option></select></label>
 <label>Entry<input name="entry" type="number" step="any" required></label>
 <label>Exit (empty = still open)<input name="exit" type="number" step="any" inputmode="decimal"></label>
-<label>Size (total, all entries)<input name="size" type="number" step="any" value="1" required></label>
+<label>Size (lots)<input name="size" type="number" step="any" value="1" required></label>
 <label>Times opened in this position<input name="entries" type="number" min="1" step="1" value="1" inputmode="numeric"></label>
 <label>Entries that hit stop-loss<input name="slhit" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+<div class="wide"><div class="chk"><label><input type="checkbox" name="persize" checked>Size above is per entry (multiplied by times opened)</label></div></div>
 <label>Stop loss<input name="stop" type="number" step="any" inputmode="decimal"></label>
 <label>Target (TP)<input name="target" type="number" step="any" inputmode="decimal"></label>
 
@@ -208,9 +209,9 @@ function fmt(n){if(ACCT==="cent")return(n<0?"-":"")+Math.abs(n).toFixed(2)+" USC
 function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function cs(s){s=String(s||"").toUpperCase();return/^(XAU|GOLD)/.test(s)?100:/^(XAG|SILVER)/.test(s)?5000:/^(BTC|ETH|LTC|XRP)/.test(s)?1:/^[A-Z]{6}/.test(s)?100000:1}
 function mult(t){var m=cs(t.symbol);return String(t.symbol||"").toUpperCase().slice(3,6)==="JPY"?m/(+t.entry||1):m}
-function calc(t){var m=mult(t),rk=t.stop?Math.abs(t.entry-t.stop)*t.size*m:0;
+function calc(t){var m=mult(t),rk=t.stop?Math.abs(t.entry-t.stop)*tsz(t)*m:0;
 if(t.profit!=null){var pf=+t.profit;return{pnl:pf,r:rk?pf/rk:null}}
-var d=t.side==="Long"?t.exit-t.entry:t.entry-t.exit,pnl=d*t.size*m-t.fees;if(slN(t)>0&&t.stop){var n=entN(t);pnl=(n-slN(t))*(t.size/n)*d*m+slAmt(t)-t.fees}return{pnl:pnl,r:rk?pnl/rk:null}}
+var d=t.side==="Long"?t.exit-t.entry:t.entry-t.exit,pnl=d*tsz(t)*m-t.fees;if(slN(t)>0&&t.stop){var n=entN(t);pnl=(n-slN(t))*esz(t)*d*m+slAmt(t)-t.fees}return{pnl:pnl,r:rk?pnl/rk:null}}
 
 function $(i){return document.getElementById(i)}
 function fmt(n){if(ACCT==="cent")return(n<0?"-":"")+Math.abs(n).toFixed(2)+" USC";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:CUR,minimumFractionDigits:2}).format(n)}catch(e){return n.toFixed(2)}}
@@ -231,7 +232,7 @@ var tags=[];trades.forEach(function(t){if(t.tag&&tags.indexOf(t.tag)<0)tags.push
 var cur=$("tagf").value;$("tagf").innerHTML='<option value="">All strategies</option>'+tags.map(function(t){return'<option'+(t===cur?" selected":"")+'>'+esc(t)+'</option>'}).join("");
 if(!full.length){$("tbl").innerHTML='<div class="empty">No trades yet. Log your first one above.</div>';return}
 $("tbl").innerHTML='<table><tr><th>Date</th><th>Symbol</th><th>Side</th><th>Entry</th><th>Exit</th><th>Size</th><th>P&amp;L</th><th>R</th><th>Tag</th><th>Notes</th><th>Chart</th><th></th></tr>'+
-full.map(function(t){var r=isC(t)?calc(t):{pnl:0,r:null};return'<tr><td>'+t.date+'</td><td>'+esc(t.symbol)+'</td><td>'+t.side+stkB(t)+'</td><td>'+t.entry+'</td><td>'+(isC(t)?t.exit:'<b>Open</b>')+'</td><td>'+t.size+'</td>'+(isC(t)?'<td class="'+(r.pnl>=0?"win":"loss")+'">'+fmt(r.pnl)+(slB(t)?'<br>'+slB(t):'')+'</td><td>'+(r.r===null?"-":r.r.toFixed(2))+'</td>':'<td>'+(slN(t)?slB(t):'-')+'</td><td>-</td>')+'<td>'+esc(t.tag)+'</td><td class="note"><div class="cl" title="'+esc(stripE(t.notes))+'">'+esc(stripE(t.notes))+'</div></td><td>'+thumbs(t)+'</td><td>'+(isC(t)?"":'<button class="ghost" data-close="'+t.id+'">Close</button> ')+'<button class="ghost" data-edit="'+t.id+'">Edit</button> <button class="ghost" data-id="'+t.id+'">Delete</button></td></tr>'}).reverse().slice(0,limit).join("")+'</table>'+(full.length>limit?'<button class="ghost" id="more" style="margin-top:10px">Show more ('+(full.length-limit)+')</button>':"")}
+full.map(function(t){var r=isC(t)?calc(t):{pnl:0,r:null};return'<tr><td>'+t.date+'</td><td>'+esc(t.symbol)+'</td><td>'+t.side+stkB(t)+'</td><td>'+t.entry+'</td><td>'+(isC(t)?t.exit:'<b>Open</b>')+'</td><td>'+t.size+(perE(t)&&entN(t)>1?' <small title="Size per entry × times opened">×'+entN(t)+' = '+Math.round(tsz(t)*1000)/1000+'</small>':'')+'</td>'+(isC(t)?'<td class="'+(r.pnl>=0?"win":"loss")+'">'+fmt(r.pnl)+(slB(t)?'<br>'+slB(t):'')+'</td><td>'+(r.r===null?"-":r.r.toFixed(2))+'</td>':'<td>'+(slN(t)?slB(t):'-')+'</td><td>-</td>')+'<td>'+esc(t.tag)+'</td><td class="note"><div class="cl" title="'+esc(stripE(t.notes))+'">'+esc(stripE(t.notes))+'</div></td><td>'+thumbs(t)+'</td><td>'+(isC(t)?"":'<button class="ghost" data-close="'+t.id+'">Close</button> ')+'<button class="ghost" data-edit="'+t.id+'">Edit</button> <button class="ghost" data-id="'+t.id+'">Delete</button></td></tr>'}).reverse().slice(0,limit).join("")+'</table>'+(full.length>limit?'<button class="ghost" id="more" style="margin-top:10px">Show more ('+(full.length-limit)+')</button>':"")}
 function chart(res){
 var el=$("chart");if(!res.length){el.innerHTML='<div class="empty">The curve appears after your first trade.</div>';return}
 var pts=[0],c=0;res.forEach(function(r){c+=r.pnl;pts.push(c)});
@@ -248,13 +249,13 @@ if(warn.length&&!confirm("Check before saving:\n\n• "+warn.join("\n• ")+"\n\
 btn.disabled=true;
 try{var up=async function(inp,prev){var file=form.elements[inp].files[0];if(!file)return prev||null;var p=user.id+"/"+Date.now()+inp+".jpg";
 var u=await sb.storage.from("screenshots").upload(p,await shrink(file),{contentType:"image/jpeg"});if(u.error)throw u.error;if(prev)await sb.storage.from("screenshots").remove([prev]);return p};
-var row={date:g("date"),symbol:g("symbol").toUpperCase().trim(),side:g("side"),entry:+g("entry"),exit:pre.exit,target:pre.target,size:+g("size"),stop:g("stop")?+g("stop"):null,fees:+(old.fees||0),tag:g("tag").trim(),notes:withE(g("notes").trim(),g("entries"),g("slhit")),session:g("session"),trade_time:g("trade_time"),timeframe:g("timeframe"),mistakes:f.getAll("mistake").join(","),shot_path:await up("shot",old.shot_path),result_path:await up("shot2",old.result_path)};
+var row={date:g("date"),symbol:g("symbol").toUpperCase().trim(),side:g("side"),entry:+g("entry"),exit:pre.exit,target:pre.target,size:+g("size"),stop:g("stop")?+g("stop"):null,fees:+(old.fees||0),tag:g("tag").trim(),notes:withE(g("notes").trim(),g("entries"),g("slhit"),!!g("persize")),session:g("session"),trade_time:g("trade_time"),timeframe:g("timeframe"),mistakes:f.getAll("mistake").join(","),shot_path:await up("shot",old.shot_path),result_path:await up("shot2",old.result_path)};
 var r=editing?await sb.from("trades").update(row).eq("id",editing):await sb.from("trades").insert(row);
 if(r.error)throw r.error;resetForm();await refresh()}catch(err){alert("Could not save: "+err.message)}
 btn.disabled=false});
 function resetForm(){editing=null;var f=$("f");f.reset();f.date.value=today();f.elements.trade_time.value=nowT();f.size.value=1;$("cancel").hidden=true;f.querySelector("button[type=submit]").textContent="Save trade"}
 $("cancel").onclick=resetForm;
-function editTrade(t){var f=$("f");editing=t.id;["date","symbol","side","entry","exit","size","stop","target","tag","notes","session","timeframe","trade_time"].forEach(function(k){f.elements[k].value=t[k]==null?"":t[k]});f.elements.notes.value=stripE(t.notes);f.elements.entries.value=entN(t);f.elements.slhit.value=slN(t);
+function editTrade(t){var f=$("f");editing=t.id;["date","symbol","side","entry","exit","size","stop","target","tag","notes","session","timeframe","trade_time"].forEach(function(k){f.elements[k].value=t[k]==null?"":t[k]});f.elements.notes.value=stripE(t.notes);f.elements.entries.value=entN(t);f.elements.slhit.value=slN(t);f.elements.persize.checked=perE(t)||entN(t)<=1;
 var ms=(t.mistakes||"").split(",");Array.prototype.forEach.call(f.querySelectorAll("input[name=mistake]"),function(c){c.checked=ms.indexOf(c.value)>-1});$("cancel").hidden=false;f.querySelector("button[type=submit]").textContent="Update trade";show("journal");f.scrollIntoView({behavior:"smooth"})}
 function thumbs(t){return'<div class="thumbs">'+[t.shot_path,t.result_path].map(function(p,i){return urls[p]?'<img class="thumb" src="'+urls[p]+'" data-src="'+urls[p]+'" alt="'+(i?"Result":"Prediction")+' screenshot">':""}).join("")+'</div>'}
 function shrink(file){return new Promise(function(res,rej){var im=new Image();im.onerror=rej;im.onload=function(){
@@ -322,7 +323,7 @@ Object.keys(cnt).sort(function(x,y){return cnt[y]-cnt[x]}).forEach(function(m){a
 var ns=L.filter(function(t){return !t.stop}).length;if(ns)add(2,ns+' of '+n+' trades had <b>no stop loss</b> recorded.');
 var D={};L.forEach(function(t){D[t.date]=(D[t.date]||[]).concat(t)});
 var ot=Object.keys(D).filter(function(d){return D[d].reduce(function(a,t){return a+entN(t)},0)>4});if(ot.length)add(2,'<b>Overtrading</b>: more than 4 trades on '+ot.join(", ")+'.');
-var up=0;L.forEach(function(t,i){if(i&&R[i-1].pnl<0&&t.size>L[i-1].size*1.2)up++});if(up)add(2,'Increased size right after a loss '+up+' time(s). This is a revenge or martingale pattern.');
+var up=0;L.forEach(function(t,i){if(i&&R[i-1].pnl<0&&tsz(t)>tsz(L[i-1])*1.2)up++});if(up)add(2,'Increased size right after a loss '+up+' time(s). This is a revenge or martingale pattern.');
 var slc=0,slt=0,sla=0;L.forEach(function(t){slc+=slN(t);slt+=entN(t);sla+=slAmt(t)});if(slc)add(1,'<b>'+slc+' of '+slt+' entries</b> hit your stop-loss this week ('+fmt(sla)+').');
 var sg=stkG(L);if(sg.length){add(1,'<b>'+sg.length+' stacked position(s)</b> this week ('+sg.map(function(g){return esc(g.a[0].symbol)+' ×'+entT(g.a)}).join(", ")+'). Check that every add was in your plan.');sg.filter(function(g){return entT(g.a)>=4}).forEach(function(g){add(2,'<b>'+entT(g.a)+' entries</b> in one '+esc(g.a[0].symbol)+' '+g.a[0].side+' position on '+g.k.split("|")[0]+'. More than 3 adds is usually hope, not a plan.')});sg.filter(function(g){return stkAD(g.a)}).forEach(function(g){add(2,'<b>Averaged down</b> on '+esc(g.a[0].symbol)+' '+g.a[0].side+' ('+g.k.split("|")[0]+'): you added at a worse price than your first entry. This is how small losses become big ones.')})}
 var st=0,mx=0;R.forEach(function(r){st=r.pnl<0?st+1:0;mx=Math.max(mx,st)});if(mx>=3)add(2,'<b>'+mx+' losses in a row</b>. Consider stopping for the day after 2 or 3.');
@@ -565,13 +566,16 @@ if(x)ntSet(x);else if(u)ntUnset(u)}
 $("ntJ").addEventListener("click",ntClick);$("ntG").addEventListener("click",ntClick);
 
 function entN(t){var m=/\[Entries:(\d+)\]/i.exec(t&&t.notes||"");return m?Math.max(1,+m[1]):1}
-function stripE(n){return String(n||"").replace(/^\s*(\[(Entries|SL):\d+\]\s*)+/i,"")}
+function stripE(n){return String(n||"").replace(/^\s*((\[(Entries|SL):\d+\]|\[Per\])\s*)+/i,"")}
+function perE(t){return/\[Per\]/i.test(t&&t.notes||"")}
+function tsz(t){return perE(t)?t.size*entN(t):+t.size}
+function esz(t){return perE(t)?+t.size:t.size/entN(t)}
 function slN(t){var m=/\[SL:(\d+)\]/i.exec(t&&t.notes||"");return m?Math.min(+m[1],entN(t)):0}
-function slAmt(t){var k=slN(t);if(!k||!t.stop)return 0;return -k*(t.size/entN(t))*Math.abs(t.entry-t.stop)*mult(t)}
-function restAmt(t){var k=slN(t);if(!k||!isC(t))return null;var n=entN(t),d2=t.side==="Long"?t.exit-t.entry:t.entry-t.exit;return(n-k)*(t.size/n)*d2*mult(t)}
+function slAmt(t){var k=slN(t);if(!k||!t.stop)return 0;return -k*esz(t)*Math.abs(t.entry-t.stop)*mult(t)}
+function restAmt(t){var k=slN(t);if(!k||!isC(t))return null;var n=entN(t),d2=t.side==="Long"?t.exit-t.entry:t.entry-t.exit;return(n-k)*esz(t)*d2*mult(t)}
 function slB(t){var k=slN(t),n=entN(t);if(!k){if(n>1&&isC(t)){var pn=calc(t).pnl;return'<small class="'+(pn>=0?"win":"loss")+'">'+n+(pn>=0?" entries in profit · ":" entries in loss · ")+fmt(pn)+" ("+fmt(pn/n)+" each)</small>"}return""}var ra=restAmt(t),h='<small class="loss" title="'+k+' of '+n+' entries hit the stop-loss">SL ×'+k+(t.stop?" · "+fmt(slAmt(t)):" · no stop price set")+"</small>";
 if(ra!==null&&n>k)h+='<br><small class="'+(ra>=0?"win":"loss")+'">'+(n-k)+(ra>=0?" in profit · ":" closed at a loss · ")+fmt(ra)+"</small>";return h}
-function withE(n,e,sl){e=Math.max(1,Math.floor(+e||1));sl=Math.min(e,Math.max(0,Math.floor(+sl||0)));return(e>1?"[Entries:"+e+"] ":"")+(sl>0?"[SL:"+sl+"] ":"")+stripE(n)}
+function withE(n,e,sl,per){e=Math.max(1,Math.floor(+e||1));sl=Math.min(e,Math.max(0,Math.floor(+sl||0)));return(e>1?"[Entries:"+e+"] ":"")+(sl>0?"[SL:"+sl+"] ":"")+(e>1&&per?"[Per] ":"")+stripE(n)}
 function entT(a){return a.reduce(function(x,t){return x+entN(t)},0)}
 var STKM={};
 function stkG(arr){var g={};arr.forEach(function(t){var k=t.date+"|"+String(t.symbol).toUpperCase()+"|"+t.side;(g[k]=g[k]||[]).push(t)});
@@ -582,7 +586,7 @@ function stkR(){var el=$("stk");if(!el)return;STKM={};var G2=stkG(trades);G2.for
 if(!G2.length){el.hidden=true;el.innerHTML="";return}
 G2.sort(function(x,y){return x.k<y.k?1:-1});
 el.innerHTML='<h2 style="margin:0 0 8px;font-size:15px">Stacked positions</h2><p style="color:var(--mute);font-size:12px;margin:0 0 8px">Several entries on the same day, symbol and side are grouped as one position.</p>'+G2.slice(0,4).map(function(g){
-var a=g.a,sz=0,ev=0,pl=0,cn=0,rk=0,ns=0,en=entT(a),sl=0,sa=0,ra2=0,rc=0;a.forEach(function(t){sz+=+t.size;ev+=t.entry*t.size;if(isC(t)){pl+=calc(t).pnl;cn++}if(t.stop)rk+=Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl);else ns++});
+var a=g.a,sz=0,ev=0,pl=0,cn=0,rk=0,ns=0,en=entT(a),sl=0,sa=0,ra2=0,rc=0;a.forEach(function(t){sz+=tsz(t);ev+=t.entry*tsz(t);if(isC(t)){pl+=calc(t).pnl;cn++}if(t.stop)rk+=Math.abs(calc(Object.assign({},t,{exit:t.stop,fees:0,profit:null})).pnl);else ns++});
 a.forEach(function(t){sl+=slN(t);sa+=slAmt(t);var x=restAmt(t);if(x!==null){ra2+=x;rc+=entN(t)-slN(t)}});var ad=stkAD(a),p=g.k.split("|");
 return'<div class="ckl" style="display:block;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><b>'+esc(p[1])+" "+p[2]+"</b> · "+p[0]+" · "+en+" entr"+(en>1?"ies":"y")+(ad?' <b class="loss">Averaged down</b>':"")+'<br><span style="color:var(--mute);font-size:13px">Total size '+(Math.round(sz*100)/100)+" · avg entry "+(ev/sz).toFixed(2)+" · stop risk "+fmt(rk)+(ns?" ("+ns+" with no stop)":"")+(sl?' · <b class="loss">'+sl+" stopped out ("+fmt(sa)+")</b>":"")+(sl&&rc?' · <b class="'+(ra2>=0?"win":"loss")+'">'+rc+(ra2>=0?" in profit ":" closed at a loss ")+fmt(ra2)+"</b>":"")+"<br>"+(cn===a.length?(pl>=0?"Combined profit ":"Combined loss "):"Closed so far ("+cn+" of "+a.length+") ")+'<b class="'+(pl>=0?"win":"loss")+'">'+fmt(pl)+"</b></span></div>"}).join("");
 el.hidden=false}
